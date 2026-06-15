@@ -2,7 +2,7 @@
 
 FairShare is a production-quality, responsive Shared Expenses application designed to manage shared group expenses, simplify outstanding debts, record settlements, and support secure CSV expense data importing with built-in advanced anomaly detection.
 
-This project was built for the **Spreetail Software Developer Assignment**.
+This project was built for the **Spreetail Software Developer Assignment** using the **Antigravity AI Coding Assistant (by the Google Deepmind team)** as the primary pair-programming agent.
 
 ---
 
