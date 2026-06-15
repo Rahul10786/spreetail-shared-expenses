@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/useAuth';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { GroupDetail } from './pages/GroupDetail';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 const App: React.FC = () => {
@@ -21,6 +22,14 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:groupId"
+            element={
+              <ProtectedRoute>
+                <GroupDetail />
               </ProtectedRoute>
             }
           />

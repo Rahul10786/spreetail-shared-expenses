@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import groupRoutes from './routes/groupRoutes';
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
