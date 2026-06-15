@@ -89,6 +89,7 @@ interface ImportScanResult {
   anomaliesCount: number;
   anomalies: ImportAnomaly[];
   validExpensesCount: number;
+  validatedExpenses?: any[];
 }
 
 export const GroupDetail: React.FC = () => {
@@ -135,6 +136,8 @@ export const GroupDetail: React.FC = () => {
   const [importScanResult, setImportScanResult] = useState<ImportScanResult | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [approvedRowNumbers, setApprovedRowNumbers] = useState<Record<number, boolean>>({});
+  const [selectedAuditUser, setSelectedAuditUser] = useState<UserBalance | null>(null);
 
   const fetchGroupDetail = async () => {
     if (!groupId) return;
@@ -401,6 +404,14 @@ export const GroupDetail: React.FC = () => {
       }
 
       setImportScanResult(data);
+      if (data.validatedExpenses) {
+        const initChecked: Record<number, boolean> = {};
+        data.validatedExpenses.forEach((exp: any) => {
+          initChecked[exp.rowNumber] = true;
+        });
+        setApprovedRowNumbers(initChecked);
+      }
+
       if (data.status === 'FAILED') {
         toast('CSV scan detected critical errors.', 'error');
       } else {
@@ -421,8 +432,13 @@ export const GroupDetail: React.FC = () => {
     setImportError(null);
 
     try {
+      const approvedRows = Object.keys(approvedRowNumbers)
+        .map(Number)
+        .filter(rowNum => approvedRowNumbers[rowNum]);
+
       await api.post(`/groups/${groupId}/imports/${importScanResult.jobId}/confirm`, {
         action,
+        approvedRowNumbers: approvedRows,
       });
 
       if (action === 'APPROVE') {
@@ -536,23 +552,30 @@ export const GroupDetail: React.FC = () => {
               <h3 className="text-lg font-bold text-slate-800 mb-4">Balances Ledger</h3>
               <div className="space-y-3">
                 {balances.map((b) => (
-                  <div key={b.userId} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0 text-sm">
-                    <span className={`font-medium ${b.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                  <div
+                    key={b.userId}
+                    onClick={() => setSelectedAuditUser(b)}
+                    className="flex justify-between items-center py-2 px-3 hover:bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-100 transition-all text-sm group"
+                  >
+                    <span className={`font-medium group-hover:text-primary-600 transition-colors ${b.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
                       {b.name}
                     </span>
-                    {b.balance > 0 ? (
-                      <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-lg text-xs">
-                        is owed ${b.balance.toFixed(2)}
-                      </span>
-                    ) : b.balance < 0 ? (
-                      <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg text-xs">
-                        owes ${Math.abs(b.balance).toFixed(2)}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg text-xs">
-                        settled up
-                      </span>
-                    )}
+                    <div className="flex items-center space-x-1.5">
+                      {b.balance > 0 ? (
+                        <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-lg text-xs">
+                          is owed ₹{b.balance.toFixed(2)}
+                        </span>
+                      ) : b.balance < 0 ? (
+                        <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg text-xs">
+                          owes ₹{Math.abs(b.balance).toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg text-xs">
+                          settled up
+                        </span>
+                      )}
+                      <span className="text-slate-350 group-hover:text-slate-500 transition-colors text-[11px]">🔍</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -573,7 +596,7 @@ export const GroupDetail: React.FC = () => {
                         <span className="font-semibold text-slate-700">{s.fromName}</span>
                         <span className="text-slate-400 mx-1">owes</span>
                         <span className="font-semibold text-slate-700">{s.toName}</span>
-                        <div className="font-bold text-slate-950 mt-1 text-sm">${s.amount.toFixed(2)}</div>
+                        <div className="font-bold text-slate-950 mt-1 text-sm">₹{s.amount.toFixed(2)}</div>
                       </div>
                       <button
                         onClick={() => openSettleModalPrefilled(s.fromUserId, s.toUserId, s.amount)}
@@ -641,11 +664,11 @@ export const GroupDetail: React.FC = () => {
                         </div>
                         <div className="text-slate-400 text-xs pt-2">
                           <strong>Participants: </strong>
-                          {expense.splits.map(s => `${s.user.name} ($${s.amount.toFixed(2)})`).join(', ')}
+                          {expense.splits.map(s => `${s.user.name} (₹${s.amount.toFixed(2)})`).join(', ')}
                         </div>
                       </div>
                       <div className="flex flex-col items-end space-y-2">
-                        <span className="text-lg font-extrabold text-slate-800">${expense.amount.toFixed(2)}</span>
+                        <span className="text-lg font-extrabold text-slate-800">₹{expense.amount.toFixed(2)}</span>
                         {(expense.paidById === currentUser?.id || group.createdById === currentUser?.id) && (
                           <button
                             onClick={() => handleDeleteExpense(expense.id)}
@@ -687,7 +710,7 @@ export const GroupDetail: React.FC = () => {
                         </div>
                       </div>
                       <span className="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                        ${settlement.amount.toFixed(2)}
+                        ₹{settlement.amount.toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -1134,6 +1157,34 @@ export const GroupDetail: React.FC = () => {
                   </div>
                 )}
 
+                {importScanResult.validatedExpenses && importScanResult.validatedExpenses.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-800 text-sm">Select Transactions to Import (Meera's Request)</h4>
+                    <div className="border border-slate-100 rounded-xl max-h-52 overflow-y-auto p-3 bg-slate-50/20 space-y-2">
+                      {importScanResult.validatedExpenses.map((exp: any) => (
+                        <label key={exp.rowNumber} className="flex items-start space-x-3 text-xs text-slate-700 hover:bg-slate-50 p-2 rounded-lg cursor-pointer border border-slate-100/50 bg-white">
+                          <input
+                            type="checkbox"
+                            checked={approvedRowNumbers[exp.rowNumber] ?? true}
+                            onChange={() => {
+                              setApprovedRowNumbers(prev => ({
+                                ...prev,
+                                [exp.rowNumber]: !prev[exp.rowNumber]
+                              }));
+                            }}
+                            className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 mt-0.5"
+                          />
+                          <div>
+                            <span className="font-bold text-slate-800">Row {exp.rowNumber}: {exp.description}</span>
+                            <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name}</span>
+                            <div className="text-slate-400 mt-1">Split Type: {exp.splitType} • With: {exp.splits.map((s: any) => s.name).join(', ')}</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
                   <button
                     onClick={() => handleCSVConfirm('REJECT')}
@@ -1157,6 +1208,124 @@ export const GroupDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Rohan's Balance Audit Trail Modal */}
+      {selectedAuditUser && (() => {
+        const userPaid = group.expenses.filter(e => e.paidById === selectedAuditUser.userId);
+        const userOwed = group.expenses.flatMap(e => {
+          const split = e.splits.find(s => s.userId === selectedAuditUser.userId);
+          return split ? [{ ...e, myShare: split.amount }] : [];
+        });
+        const settlementsSent = group.settlements.filter(s => s.payFromId === selectedAuditUser.userId);
+        const settlementsReceived = group.settlements.filter(s => s.payToId === selectedAuditUser.userId);
+
+        const totalPaid = userPaid.reduce((sum, e) => sum + e.amount, 0);
+        const totalOwed = userOwed.reduce((sum, e) => sum + e.myShare, 0);
+        const totalSent = settlementsSent.reduce((sum, s) => sum + s.amount, 0);
+        const totalReceived = settlementsReceived.reduce((sum, s) => sum + s.amount, 0);
+        const computedBalance = totalPaid - totalOwed + totalSent - totalReceived;
+
+        return (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 font-sans">Balance Audit Trail</h3>
+                  <p className="text-slate-500 text-xs mt-0.5 font-sans">Detailed breakdown for {selectedAuditUser.name}</p>
+                </div>
+                <button onClick={() => setSelectedAuditUser(null)} className="text-slate-400 hover:text-slate-600 text-lg p-1">✕</button>
+              </div>
+
+              <div className="space-y-6 font-sans">
+                {/* Summary cards */}
+                <div className="grid grid-cols-4 gap-3 text-center">
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold">Total Paid</p>
+                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalPaid.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold">My Shares</p>
+                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalOwed.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold">Settled Out</p>
+                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalSent.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                    <p className="text-slate-400 text-[10px] uppercase font-bold">Settled In</p>
+                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalReceived.toFixed(2)}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl flex justify-between items-center text-sm font-bold bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 font-medium">Audit Formula: Paid - Shares + Sent - Received</span>
+                  <span className={computedBalance >= 0 ? 'text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg' : 'text-red-600 bg-red-50 px-2.5 py-1 rounded-lg'}>
+                    ₹{computedBalance.toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Detailed Ledger List */}
+                <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                  <h4 className="font-bold text-slate-800 text-sm">Ledger Entries</h4>
+                  
+                  {userPaid.map(e => (
+                    <div key={e.id} className="p-3 bg-emerald-50/35 border border-emerald-100/50 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">Paid: {e.description}</span>
+                        <span className="text-slate-400 block mt-0.5">{new Date(e.date).toLocaleDateString()}</span>
+                      </div>
+                      <span className="font-bold text-emerald-600">+₹{e.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  {userOwed.map(e => (
+                    <div key={e.id} className="p-3 bg-red-50/35 border border-red-100/50 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">Owed Share: {e.description}</span>
+                        <span className="text-slate-400 block mt-0.5">Paid by {group.members.find(m => m.userId === e.paidById)?.user.name} on {new Date(e.date).toLocaleDateString()}</span>
+                      </div>
+                      <span className="font-bold text-red-600">-₹{e.myShare.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  {settlementsSent.map(s => (
+                    <div key={s.id} className="p-3 bg-blue-50/35 border border-blue-100/50 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">Sent Settlement to {s.payTo.name}</span>
+                        <span className="text-slate-400 block mt-0.5">{new Date(s.date).toLocaleDateString()}</span>
+                      </div>
+                      <span className="font-bold text-blue-600">+₹{s.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  {settlementsReceived.map(s => (
+                    <div key={s.id} className="p-3 bg-amber-50/35 border border-amber-100/50 rounded-xl flex justify-between items-center text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800">Received Settlement from {s.payFrom.name}</span>
+                        <span className="text-slate-400 block mt-0.5">{new Date(s.date).toLocaleDateString()}</span>
+                      </div>
+                      <span className="font-bold text-amber-600">-₹{s.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+
+                  {userPaid.length === 0 && userOwed.length === 0 && settlementsSent.length === 0 && settlementsReceived.length === 0 && (
+                    <p className="text-center text-slate-400 text-xs py-4">No ledger transactions for this user.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
+                <button
+                  onClick={() => setSelectedAuditUser(null)}
+                  className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors"
+                >
+                  Close Audit Trail
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -102,7 +102,6 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       rowIndex++;
       const rawDataString = JSON.stringify(row);
 
-      // Check header naming support
       const dateStr = row.date?.trim();
       const description = row.description?.trim();
       const paidBy = row.paid_by?.trim();
@@ -127,7 +126,6 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       // Check 2: Invalid Date format
       let date = parseDDMMYYYY(dateStr);
       if (!date || isNaN(date.getTime())) {
-        // Fallback to JS standard Date parsing
         date = new Date(dateStr);
         if (isNaN(date.getTime())) {
           anomalies.push({
@@ -152,8 +150,8 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         });
       }
 
-      // Check 4: Negative/Zero Amount (Ref/Double entries check)
-      const amount = parseFloat(amountStr);
+      // Parse Amount and Convert currency if USD (Priya's request)
+      let amount = parseFloat(amountStr);
       if (isNaN(amount)) {
         anomalies.push({
           rowNumber: rowIndex,
@@ -164,6 +162,39 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         });
         continue;
       }
+
+      let currencyMessage = '';
+      if (currency === 'USD') {
+        const rate = 94.66;
+        const converted = amount * rate;
+        currencyMessage = `Converted $${amount} USD to ₹${converted.toFixed(2)} INR at today's rate of 1 USD = ₹${rate}.`;
+        amount = converted;
+        anomalies.push({
+          rowNumber: rowIndex,
+          severity: 'WARNING',
+          type: 'CURRENCY_MISMATCH',
+          message: currencyMessage,
+          rawData: rawDataString,
+        });
+      } else if (currency && currency !== 'INR') {
+        anomalies.push({
+          rowNumber: rowIndex,
+          severity: 'WARNING',
+          type: 'CURRENCY_MISMATCH',
+          message: `Foreign currency "${currency}" detected. The system resolves all balances in base currency (INR).`,
+          rawData: rawDataString,
+        });
+      } else if (!currency) {
+        anomalies.push({
+          rowNumber: rowIndex,
+          severity: 'WARNING',
+          type: 'CURRENCY_MISMATCH',
+          message: 'Currency is missing. Defaulted to base currency (INR).',
+          rawData: rawDataString,
+        });
+      }
+
+      // Check 4: Negative/Zero Amount (Ref/Double entries check)
       if (amount < 0) {
         anomalies.push({
           rowNumber: rowIndex,
@@ -177,7 +208,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
           rowNumber: rowIndex,
           severity: 'WARNING',
           type: 'NEGATIVE_AMOUNT',
-          message: 'Expense amount is $0.00.',
+          message: 'Expense amount is ₹0.00.',
           rawData: rawDataString,
         });
       }
@@ -191,7 +222,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
           message: `Expense "${description}" appears to be a settlement payment, but has no split type.`,
           rawData: rawDataString,
         });
-        continue; // Do not import as standard expense
+        continue;
       }
 
       // Check 6: Missing Payer Name
@@ -229,29 +260,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         continue;
       }
 
-      // Check 8: Currency Mismatch (e.g. USD when group default might be INR)
-      if (currency && currency !== 'INR') {
-        anomalies.push({
-          rowNumber: rowIndex,
-          severity: 'WARNING',
-          type: 'CURRENCY_MISMATCH',
-          message: `Foreign currency "${currency}" detected. The system resolves all balances in the group base currency (INR).`,
-          rawData: rawDataString,
-        });
-      }
-
-      // Check 9: Missing Currency Warning
-      if (!currency) {
-        anomalies.push({
-          rowNumber: rowIndex,
-          severity: 'WARNING',
-          type: 'CURRENCY_MISMATCH',
-          message: 'Currency is missing. Defaulting to base currency (INR).',
-          rawData: rawDataString,
-        });
-      }
-
-      // Check 10: Invalid Split Type
+      // Check 8: Invalid Split Type
       const cleanSplitType = splitTypeStr === 'unequal' ? 'EXACT' : splitTypeStr?.toUpperCase();
       if (!cleanSplitType || (cleanSplitType !== 'EQUAL' && cleanSplitType !== 'EXACT' && cleanSplitType !== 'PERCENTAGE' && cleanSplitType !== 'SHARE')) {
         anomalies.push({
@@ -264,7 +273,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         continue;
       }
 
-      // Check 11: Participants parsing
+      // Check 9: Participants parsing
       if (!splitWith) {
         anomalies.push({
           rowNumber: rowIndex,
@@ -285,7 +294,6 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       if (cleanSplitType !== 'EQUAL' && splitDetails) {
         const detailsItems = splitDetails.split(';').map((s: string) => s.trim());
         for (const item of detailsItems) {
-          // Matches e.g. "Rohan 700" or "Meera 20%" or "Aisha 1"
           const match = item.match(/^(.+?)\s+([\d.]+)(%)?$/);
           if (match) {
             const name = match[1].trim().toLowerCase();
@@ -321,7 +329,6 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
           break;
         }
 
-        // Fetch user custom split details
         let value = cleanSplitType === 'EQUAL' ? undefined : splitDetailsMap[pName.toLowerCase()];
         if (cleanSplitType !== 'EQUAL' && value === undefined) {
           anomalies.push({
@@ -371,7 +378,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         }
       }
 
-      // Check 12: Duplicate detection
+      // Check 10: Duplicate detection
       const isDbDuplicate = historicalExpenses.some(
         (e) =>
           e.description.toLowerCase() === description.toLowerCase() &&
@@ -393,24 +400,25 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
           rowNumber: rowIndex,
           severity: 'WARNING',
           type: 'DUPLICATE',
-          message: `Expense "${description}" of $${amount} on ${dateStr} by ${paidBy} appears to be a duplicate.`,
+          message: `Expense "${description}" of ₹${amount} on ${dateStr} by ${paidBy} appears to be a duplicate.`,
           rawData: rawDataString,
         });
       }
 
-      // Check 13: Extreme outlier check
+      // Check 11: Extreme outlier check
       if (historicalExpenses.length >= 3 && amount > avgHistoricalAmount * 3) {
         anomalies.push({
           rowNumber: rowIndex,
           severity: 'WARNING',
           type: 'SPLIT_MISMATCH',
-          message: `Expense amount $${amount} is an outlier (more than 3x the group's historical average of $${avgHistoricalAmount.toFixed(2)}).`,
+          message: `Expense amount ₹${amount} is an outlier (more than 3x group's average of ₹${avgHistoricalAmount.toFixed(2)}).`,
           rawData: rawDataString,
         });
       }
 
-      // Valid expense row candidate
+      // Valid candidate
       validatedExpenses.push({
+        rowNumber: rowIndex, // Keep track of original row number for selective approval
         description,
         amount,
         date,
@@ -421,10 +429,9 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       });
     }
 
-    // Save the Import Job
-    const status = anomalies.some((a) => a.severity === 'ERROR')
-      ? 'FAILED'
-      : 'PENDING_APPROVAL';
+    // Since we now support partial imports (skipping ERROR rows dynamically), we mark
+    // status as PENDING_APPROVAL as long as there is at least one valid row.
+    const status = validatedExpenses.length > 0 ? 'PENDING_APPROVAL' : 'FAILED';
 
     const job = await prisma.importJob.create({
       data: {
@@ -468,7 +475,7 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
 // Confirm/Execute Import
 export async function confirmImport(req: AuthRequest, res: Response) {
   const { groupId, jobId } = req.params;
-  const { action } = req.body;
+  const { action, approvedRowNumbers } = req.body; // approvedRowNumbers matches rowNumber key
   const userId = req.userId;
 
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -495,17 +502,17 @@ export async function confirmImport(req: AuthRequest, res: Response) {
       return res.status(200).json({ message: 'Import job cancelled/rejected.' });
     }
 
-    const hasErrors = job.anomalies.some((a) => a.severity === 'ERROR');
-    if (hasErrors) {
-      return res.status(400).json({ error: 'Cannot approve import job with unresolved ERROR anomalies.' });
-    }
+    let expensesToInsert = JSON.parse(job.rawData || '[]');
 
-    const expensesToInsert = JSON.parse(job.rawData || '[]');
+    // Filter by approvedRowNumbers if provided (Meera's request)
+    if (approvedRowNumbers && Array.isArray(approvedRowNumbers)) {
+      expensesToInsert = expensesToInsert.filter((item: any) =>
+        approvedRowNumbers.includes(item.rowNumber)
+      );
+    }
 
     await prisma.$transaction(async (tx) => {
       for (const item of expensesToInsert) {
-        // Map clean split types to standard DB splitTypes:
-        // equal, percentage, share -> EQUAL, PERCENTAGE, and EXACT (for share coefficient splits)
         const dbSplitType = item.splitType === 'SHARE' ? 'EXACT' : item.splitType;
 
         const expense = await tx.expense.create({
@@ -536,7 +543,6 @@ export async function confirmImport(req: AuthRequest, res: Response) {
             calculatedSplits.push({ userId: split.userId, amount: shareVal, percentage: split.value });
           }
         } else if (item.splitType === 'SHARE') {
-          // Calculate Coefficient Shares splitting
           const totalShares = item.splits.reduce((acc: number, s: any) => acc + (s.value || 0), 0);
           for (const split of item.splits) {
             const shareVal = Number((((split.value || 0) / totalShares) * item.amount).toFixed(2));
