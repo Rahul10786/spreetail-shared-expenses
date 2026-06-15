@@ -390,7 +390,7 @@ export const GroupDetail: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/groups/${groupId}/imports`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/groups/${groupId}/imports`, {
         method: 'POST',
         headers: {
           Authorization: token ? `Bearer ${token}` : '',
