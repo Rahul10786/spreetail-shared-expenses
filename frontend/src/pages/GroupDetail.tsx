@@ -74,6 +74,22 @@ interface SuggestedSettlement {
   amount: number;
 }
 
+interface ImportAnomaly {
+  rowNumber: number;
+  severity: string;
+  type: string;
+  message: string;
+}
+
+interface ImportScanResult {
+  jobId: string;
+  status: string;
+  totalRowsScanned: number;
+  anomaliesCount: number;
+  anomalies: ImportAnomaly[];
+  validExpensesCount: number;
+}
+
 export const GroupDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const { user: currentUser } = useAuth();
@@ -111,12 +127,18 @@ export const GroupDetail: React.FC = () => {
   const [settleLoading, setSettleLoading] = useState(false);
   const [settleError, setSettleError] = useState<string | null>(null);
 
+  // CSV Importer states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importScanResult, setImportScanResult] = useState<ImportScanResult | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
   const fetchGroupDetail = async () => {
     if (!groupId) return;
     try {
       setLoading(true);
       
-      // Fetch details and balances in parallel
       const [detailRes, balanceRes] = await Promise.all([
         api.get<{ group: GroupDetailData }>(`/groups/${groupId}`),
         api.get<{ balances: UserBalance[]; suggestedSettlements: SuggestedSettlement[] }>(`/groups/${groupId}/balances`)
@@ -334,6 +356,75 @@ export const GroupDetail: React.FC = () => {
     }
   };
 
+  // Handle CSV file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+      setImportError(null);
+    }
+  };
+
+  // Upload and scan CSV
+  const handleCSVUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      setImportError('Please select a CSV file.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    setImportLoading(true);
+    setImportError(null);
+
+    try {
+      // Custom call to API because of FormData multipart file upload
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/groups/${groupId}/imports`, {
+        method: 'POST',
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to scan CSV file.');
+      }
+
+      setImportScanResult(data);
+    } catch (err: any) {
+      setImportError(err.message || 'Error occurred while scanning CSV.');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  // Confirm and save CSV expenses
+  const handleCSVConfirm = async (action: 'APPROVE' | 'REJECT') => {
+    if (!importScanResult) return;
+
+    setImportLoading(true);
+    setImportError(null);
+
+    try {
+      await api.post(`/groups/${groupId}/imports/${importScanResult.jobId}/confirm`, {
+        action,
+      });
+
+      setShowImportModal(false);
+      setSelectedFile(null);
+      setImportScanResult(null);
+      await fetchGroupDetail();
+    } catch (err: any) {
+      setImportError(err.message || 'Failed to complete import processing.');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const activeMembers = group?.members.filter(m => m.isActive) || [];
 
   if (loading && !group) {
@@ -396,9 +487,20 @@ export const GroupDetail: React.FC = () => {
                 setSettleError(null);
                 setShowSettleModal(true);
               }}
-              className="py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
+              className="py-2.5 px-4 bg-emerald-55 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
             >
               Settle Up
+            </button>
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                setImportScanResult(null);
+                setImportError(null);
+                setShowImportModal(true);
+              }}
+              className="py-2.5 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Import CSV
             </button>
             <button
               onClick={() => setShowExpenseModal(true)}
@@ -449,7 +551,7 @@ export const GroupDetail: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {suggestedSettlements.map((s, idx) => (
-                    <div key={idx} className="p-3 bg-slate-55 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
+                    <div key={idx} className="p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
                       <div>
                         <span className="font-semibold text-slate-700">{s.fromName}</span>
                         <span className="text-slate-400 mx-1">owes</span>
@@ -872,6 +974,173 @@ export const GroupDetail: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-slate-800 font-sans">Import Expenses from CSV</h3>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setSelectedFile(null);
+                  setImportScanResult(null);
+                }}
+                className="text-slate-400 hover:text-slate-600 text-lg p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {importError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4 text-center font-medium">
+                {importError}
+              </div>
+            )}
+
+            {!importScanResult ? (
+              /* Phase 1: Upload Form */
+              <form onSubmit={handleCSVUpload} className="space-y-6">
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    required
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className="space-y-2">
+                    <div className="text-4xl text-slate-400">📄</div>
+                    <p className="font-bold text-slate-700 text-sm">
+                      {selectedFile ? selectedFile.name : 'Choose a CSV file or drag it here'}
+                    </p>
+                    <p className="text-slate-400 text-xs">Only .csv files are supported</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 leading-relaxed">
+                  <p className="font-bold mb-1">CSV Template Format:</p>
+                  <code className="block bg-blue-100/50 p-2 rounded text-[11px] overflow-x-auto text-blue-900 font-mono">
+                    description,amount,date,paidBy,splitType,participants
+                  </code>
+                  <ul className="list-disc list-inside mt-2 space-y-1 text-blue-700">
+                    <li><strong>paidBy</strong>: Email of register user (e.g. alice@example.com)</li>
+                    <li><strong>splitType</strong>: EQUAL, EXACT, or PERCENTAGE</li>
+                    <li><strong>participants</strong>: email1;email2 (for EQUAL) or email1:val;email2:val (EXACT/PERCENTAGE)</li>
+                  </ul>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModal(false)}
+                    className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={importLoading || !selectedFile}
+                    className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {importLoading ? 'Scanning...' : 'Scan CSV'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Phase 2: Scan report and confirmation */
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50 border-slate-150 text-sm">
+                  <div>
+                    <span className="text-slate-500">Total Scanned: </span>
+                    <strong className="text-slate-800">{importScanResult.totalRowsScanned} rows</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Valid: </span>
+                    <strong className="text-slate-800">{importScanResult.validExpensesCount} expenses</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Anomalies Detected: </span>
+                    <strong className={`px-2 py-0.5 rounded text-xs ${importScanResult.anomaliesCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+                      {importScanResult.anomaliesCount}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Warning / Error message headers */}
+                {importScanResult.status === 'FAILED' ? (
+                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium">
+                    ❌ Scan failed. The file contains critical errors that must be fixed before importing.
+                  </div>
+                ) : importScanResult.anomaliesCount > 0 ? (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm font-medium">
+                    ⚠️ Scan complete with warnings. Review warnings below before importing.
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-sm font-medium">
+                    🎉 Scan successful! All rows are clean and ready to import.
+                  </div>
+                )}
+
+                {/* Anomalies List */}
+                {importScanResult.anomalies.length > 0 && (
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm mb-2">Detected Anomalies</h4>
+                    <div className="border border-slate-100 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                            <th className="p-3">Row</th>
+                            <th className="p-3">Severity</th>
+                            <th className="p-3">Type</th>
+                            <th className="p-3">Message</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {importScanResult.anomalies.map((a, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="p-3 font-semibold text-slate-700">{a.rowNumber}</td>
+                              <td className="p-3">
+                                <span className={`px-1.5 py-0.5 rounded-[5px] text-[10px] font-extrabold uppercase ${
+                                  a.severity === 'ERROR' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {a.severity}
+                                </span>
+                              </td>
+                              <td className="p-3 text-slate-600 font-medium">{a.type}</td>
+                              <td className="p-3 text-slate-500 leading-normal">{a.message}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => handleCSVConfirm('REJECT')}
+                    disabled={importLoading}
+                    className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel / Reject
+                  </button>
+                  {importScanResult.status !== 'FAILED' && (
+                    <button
+                      onClick={() => handleCSVConfirm('APPROVE')}
+                      disabled={importLoading}
+                      className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-200"
+                    >
+                      {importLoading ? 'Importing...' : 'Approve & Import'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

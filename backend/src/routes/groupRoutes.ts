@@ -11,11 +11,13 @@ import {
 import { getGroupBalances, createSettlement } from '../controllers/settlementController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import expenseRoutes from './expenseRoutes';
+import importRoutes from './importRoutes';
 
 const router = Router();
 
 // Sub-resource routes
 router.use('/:groupId/expenses', expenseRoutes);
+router.use('/:groupId/imports', importRoutes);
 
 // Apply authMiddleware globally to all group routes
 router.use(authMiddleware as any);
