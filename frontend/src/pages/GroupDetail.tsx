@@ -1123,31 +1123,31 @@ export const GroupDetail: React.FC = () => {
 
       {/* CSV Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh] shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 font-sans">Import Expenses from CSV</h3>
+              <h3 className="text-xl font-bold text-white font-sans">Import Expenses from CSV</h3>
               <button
                 onClick={() => {
                   setShowImportModal(false);
                   setSelectedFile(null);
                   setImportScanResult(null);
                 }}
-                className="text-slate-400 hover:text-slate-600 text-lg p-1"
+                className="text-slate-400 hover:text-white text-lg p-1 transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {importError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm mb-4 text-center font-medium">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm mb-4 text-center font-medium">
                 {importError}
               </div>
             )}
 
             {!importScanResult ? (
               <form onSubmit={handleCSVUpload} className="space-y-6">
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
+                <div className="border-2 border-dashed border-white/10 hover:border-primary-500/50 rounded-2xl p-8 text-center bg-white/[0.02] hover:bg-white/[0.04] transition-all cursor-pointer relative">
                   <input
                     type="file"
                     accept=".csv"
@@ -1157,39 +1157,39 @@ export const GroupDetail: React.FC = () => {
                   />
                   <div className="space-y-2">
                     <div className="text-4xl text-slate-400">📄</div>
-                    <p className="font-bold text-slate-700 text-sm">
+                    <p className="font-bold text-slate-200 text-sm">
                       {selectedFile ? selectedFile.name : 'Choose a CSV file or drag it here'}
                     </p>
                     <p className="text-slate-400 text-xs">Only .csv files are supported</p>
                   </div>
                 </div>
 
-                <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 leading-relaxed">
-                  <p className="font-bold mb-1">CSV Template Format:</p>
-                  <code className="block bg-blue-100/50 p-2 rounded text-[11px] overflow-x-auto text-blue-900 font-mono">
+                <div className="p-4 bg-primary-950/20 border border-primary-500/10 rounded-xl text-xs text-slate-300 leading-relaxed">
+                  <p className="font-bold mb-1.5 text-primary-400">CSV Template Format:</p>
+                  <code className="block bg-slate-950/50 p-2.5 rounded text-[11px] overflow-x-auto text-primary-300 font-mono border border-white/5">
                     date,description,paid_by,amount,currency,split_type,split_with,split_details
                   </code>
-                  <ul className="list-disc list-inside mt-2 space-y-1 text-blue-700">
+                  <ul className="list-disc list-inside mt-2.5 space-y-1.5 text-slate-350">
                     <li><strong>paid_by</strong>: Registered name of the payer (e.g. Aisha, Priya)</li>
                     <li><strong>split_type</strong>: equal, unequal, percentage, or share</li>
                     <li><strong>split_with</strong>: Semicolon-separated participant names (e.g. Aisha;Rohan;Priya)</li>
                     <li><strong>split_details</strong>: Required for unequal, percentage, share. Matches name to value (e.g. Rohan 700; Priya 400 or Rohan 30%; Priya 30% or Rohan 1; Priya 2)</li>
-                    <li><strong>currency</strong> (optional): Defaults to INR. Supports USD for automatic exchange rates.</li>
+                    <li><strong>currency</strong> (optional): Defaults to INR. Supports USD or any foreign currency for real-time exchange rates.</li>
                   </ul>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <div className="flex justify-end space-x-3 pt-4 border-t border-white/5">
                   <button
                     type="button"
                     onClick={() => setShowImportModal(false)}
-                    className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="py-2.5 px-4 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={importLoading || !selectedFile}
-                    className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    className="py-2.5 px-5 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-550 hover:to-indigo-550 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   >
                     {importLoading ? 'Scanning...' : 'Scan CSV'}
                   </button>
@@ -1197,63 +1197,63 @@ export const GroupDetail: React.FC = () => {
               </form>
             ) : (
               <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50 border-slate-150 text-sm">
+                <div className="flex items-center justify-between p-4 rounded-xl border bg-white/[0.02] border-white/5 text-sm">
                   <div>
-                    <span className="text-slate-500">Total Scanned: </span>
-                    <strong className="text-slate-800">{importScanResult.totalRowsScanned} rows</strong>
+                    <span className="text-slate-400">Total Scanned: </span>
+                    <strong className="text-white">{importScanResult.totalRowsScanned} rows</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500">Valid: </span>
-                    <strong className="text-slate-800">{importScanResult.validExpensesCount} expenses</strong>
+                    <span className="text-slate-400">Valid: </span>
+                    <strong className="text-white">{importScanResult.validExpensesCount} expenses</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500">Anomalies Detected: </span>
-                    <strong className={`px-2 py-0.5 rounded text-xs ${importScanResult.anomaliesCount > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
+                    <span className="text-slate-400">Anomalies Detected: </span>
+                    <strong className={`px-2 py-0.5 rounded text-xs ${importScanResult.anomaliesCount > 0 ? 'bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold' : 'bg-green-500/10 border border-green-500/20 text-green-400 font-semibold'}`}>
                       {importScanResult.anomaliesCount}
                     </strong>
                   </div>
                 </div>
 
                 {importScanResult.status === 'FAILED' ? (
-                  <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium">
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm font-medium">
                     ❌ Scan failed. The file contains critical errors that must be fixed before importing.
                   </div>
                 ) : importScanResult.anomaliesCount > 0 ? (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm font-medium">
+                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-4 rounded-xl text-sm font-medium">
                     ⚠️ Scan complete with warnings. Review warnings below before importing.
                   </div>
                 ) : (
-                  <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl text-sm font-medium">
+                  <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 rounded-xl text-sm font-medium">
                     🎉 Scan successful! All rows are clean and ready to import.
                   </div>
                 )}
 
                 {importScanResult.anomalies.length > 0 && (
                   <div>
-                    <h4 className="font-bold text-slate-800 text-sm mb-2">Detected Anomalies</h4>
-                    <div className="border border-slate-100 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
+                    <h4 className="font-bold text-slate-300 text-sm mb-2">Detected Anomalies</h4>
+                    <div className="border border-white/5 rounded-xl overflow-hidden max-h-56 overflow-y-auto">
                       <table className="w-full text-left border-collapse text-xs">
                         <thead>
-                          <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                          <tr className="bg-white/5 text-slate-300 font-bold border-b border-white/10">
                             <th className="p-3">Row</th>
                             <th className="p-3">Severity</th>
                             <th className="p-3">Type</th>
                             <th className="p-3">Message</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-white/5">
                           {importScanResult.anomalies.map((a, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50">
-                              <td className="p-3 font-semibold text-slate-700">{a.rowNumber}</td>
+                            <tr key={idx} className="hover:bg-white/[0.02]">
+                              <td className="p-3 font-semibold text-slate-200">{a.rowNumber}</td>
                               <td className="p-3">
                                 <span className={`px-1.5 py-0.5 rounded-[5px] text-[10px] font-extrabold uppercase ${
-                                  a.severity === 'ERROR' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                  a.severity === 'ERROR' ? 'bg-red-500/10 border border-red-500/20 text-red-400' : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
                                 }`}>
                                   {a.severity}
                                 </span>
                               </td>
-                              <td className="p-3 text-slate-600 font-medium">{a.type}</td>
-                              <td className="p-3 text-slate-500 leading-normal">{a.message}</td>
+                              <td className="p-3 text-slate-300 font-medium">{a.type}</td>
+                              <td className="p-3 text-slate-400 leading-normal">{a.message}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1264,10 +1264,10 @@ export const GroupDetail: React.FC = () => {
 
                 {importScanResult.validatedExpenses && importScanResult.validatedExpenses.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="font-bold text-slate-800 text-sm">Select Transactions to Import (Meera's Request)</h4>
-                    <div className="border border-slate-100 rounded-xl max-h-52 overflow-y-auto p-3 bg-slate-50/20 space-y-2">
+                    <h4 className="font-bold text-slate-350 text-sm">Select Transactions to Import</h4>
+                    <div className="border border-white/5 rounded-xl max-h-52 overflow-y-auto p-3 bg-white/[0.01] space-y-2">
                       {importScanResult.validatedExpenses.map((exp: any) => (
-                        <label key={exp.rowNumber} className="flex items-start space-x-3 text-xs text-slate-700 hover:bg-slate-50 p-2 rounded-lg cursor-pointer border border-slate-100/50 bg-white">
+                        <label key={exp.rowNumber} className="flex items-start space-x-3 text-xs text-slate-300 hover:bg-white/5 p-3 rounded-xl cursor-pointer border border-white/5 bg-slate-900/50 transition-all">
                           <input
                             type="checkbox"
                             checked={approvedRowNumbers[exp.rowNumber] ?? true}
@@ -1277,19 +1277,19 @@ export const GroupDetail: React.FC = () => {
                                 [exp.rowNumber]: !prev[exp.rowNumber]
                               }));
                             }}
-                            className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4 mt-0.5"
+                            className="rounded text-primary-500 focus:ring-primary-500 h-4 w-4 mt-0.5 bg-white/5 border-white/10"
                           />
                           <div>
-                            <span className="font-bold text-slate-800">Row {exp.rowNumber}: {exp.description}</span>
+                            <span className="font-bold text-white">Row {exp.rowNumber}: {exp.description}</span>
                             {exp.isSettlement ? (
                               <>
-                                <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name} to {group?.members.find(m => m.userId === exp.recipientId)?.user.name}</span>
-                                <div className="text-slate-400 mt-1 font-semibold text-emerald-600">Reclassified as Group Settlement</div>
+                                <span className="text-slate-400 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name} to {group?.members.find(m => m.userId === exp.recipientId)?.user.name}</span>
+                                <div className="text-emerald-400 mt-1 font-semibold">Reclassified as Group Settlement</div>
                               </>
                             ) : (
                               <>
-                                <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name}</span>
-                                <div className="text-slate-400 mt-1">Split Type: {exp.splitType} • With: {exp.splits?.map((s: any) => s.name).join(', ') || ''}</div>
+                                <span className="text-slate-400 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name}</span>
+                                <div className="text-slate-500 mt-1">Split Type: {exp.splitType} • With: {exp.splits?.map((s: any) => s.name).join(', ') || ''}</div>
                               </>
                             )}
                           </div>
@@ -1299,11 +1299,11 @@ export const GroupDetail: React.FC = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <div className="flex justify-end space-x-3 pt-4 border-t border-white/5">
                   <button
                     onClick={() => handleCSVConfirm('REJECT')}
                     disabled={importLoading}
-                    className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="py-2.5 px-4 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors"
                   >
                     Cancel / Reject
                   </button>
@@ -1311,7 +1311,7 @@ export const GroupDetail: React.FC = () => {
                     <button
                       onClick={() => handleCSVConfirm('APPROVE')}
                       disabled={importLoading}
-                      className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-200"
+                      className="py-2.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-550 hover:to-teal-550 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20"
                     >
                       {importLoading ? 'Importing...' : 'Approve & Import'}
                     </button>
