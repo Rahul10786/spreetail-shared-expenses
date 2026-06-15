@@ -113,11 +113,11 @@ export const Dashboard: React.FC = () => {
         if (!importGroupName.trim()) {
           throw new Error('Please enter a name for the new group.');
         }
-        const createRes = await api.post<{ id: string; name: string }>('/groups', {
+        const createRes = await api.post<{ message: string; group: { id: string; name: string } }>('/groups', {
           name: importGroupName.trim(),
           description: `Imported via CSV on ${new Date().toLocaleDateString()}`,
         });
-        targetGroupId = createRes.id;
+        targetGroupId = createRes.group.id;
       }
 
       if (!targetGroupId) {
