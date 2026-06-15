@@ -684,26 +684,26 @@ export const GroupDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Suggested Settlements (simplification) */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Suggested Settlements</h3>
+            {/* Suggested Settlements */}
+            <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-4">Suggested Settlements</h3>
               {suggestedSettlements.length === 0 ? (
-                <div className="p-4 bg-emerald-50 text-emerald-800 text-center rounded-xl text-xs font-semibold">
+                <div className="p-4 bg-emerald-500/10 text-emerald-300 text-center rounded-xl text-xs font-semibold border border-emerald-500/15">
                   🎉 Everyone is fully settled up!
                 </div>
               ) : (
                 <div className="space-y-4">
                   {suggestedSettlements.map((s, idx) => (
-                    <div key={idx} className="p-3 bg-slate-55 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
+                    <div key={idx} className="p-4 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 rounded-2xl text-xs flex justify-between items-center gap-3">
                       <div>
-                        <span className="font-semibold text-slate-700">{s.fromName}</span>
-                        <span className="text-slate-400 mx-1">owes</span>
-                        <span className="font-semibold text-slate-700">{s.toName}</span>
-                        <div className="font-bold text-slate-950 mt-1 text-sm">₹{s.amount.toFixed(2)}</div>
+                        <span className="font-semibold text-slate-200">{s.fromName}</span>
+                        <span className="text-slate-505 text-slate-500 mx-1">owes</span>
+                        <span className="font-semibold text-slate-200">{s.toName}</span>
+                        <div className="font-bold text-white mt-1 text-sm">₹{s.amount.toFixed(2)}</div>
                       </div>
                       <button
                         onClick={() => openSettleModalPrefilled(s.fromUserId, s.toUserId, s.amount)}
-                        className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors"
+                        className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-555 text-white rounded-lg font-semibold transition-colors"
                       >
                         Settle
                       </button>
