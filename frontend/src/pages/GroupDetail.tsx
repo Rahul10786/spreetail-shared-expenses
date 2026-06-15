@@ -714,17 +714,17 @@ export const GroupDetail: React.FC = () => {
             </div>
 
             {/* Active Members list */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Active Members ({activeMembers.length})</h3>
+            <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-4">Active Members ({activeMembers.length})</h3>
               <div className="space-y-4">
                 {group.members.map((member) => (
-                  <div key={member.id} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
+                  <div key={member.id} className="flex justify-between items-center py-2.5 border-b border-white/5 last:border-0">
                     <div>
-                      <p className={`font-semibold text-sm ${member.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                      <p className={`font-semibold text-sm ${member.isActive ? 'text-slate-200' : 'text-slate-500 line-through'}`}>
                         {member.user.name}
                       </p>
                       <p className="text-slate-400 text-xs mt-0.5">{member.user.email}</p>
-                      <p className="text-slate-400 text-[10px] mt-0.5">
+                      <p className="text-slate-500 text-[10px] mt-0.5">
                         Joined {new Date(member.joinDate).toLocaleDateString()}
                         {member.leaveDate && ` • Left ${new Date(member.leaveDate).toLocaleDateString()}`}
                       </p>
@@ -732,7 +732,7 @@ export const GroupDetail: React.FC = () => {
                     {member.isActive && member.userId !== group.createdById && (
                       <button
                         onClick={() => handleRemoveMember(member.userId)}
-                        className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded-lg"
+                        className="text-xs font-semibold text-red-400 hover:text-red-350 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1 rounded-lg border border-red-500/20 transition-all"
                       >
                         Remove
                       </button>
