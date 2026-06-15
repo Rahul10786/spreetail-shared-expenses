@@ -330,8 +330,8 @@ export const Dashboard: React.FC = () => {
 
       {/* Create Group Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 max-w-md w-full p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative overflow-hidden">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-md w-full p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative overflow-hidden">
             {/* Modal Ambient Light */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary-500/10 rounded-full blur-[60px] pointer-events-none" />
 
@@ -404,8 +404,8 @@ export const Dashboard: React.FC = () => {
 
       {/* CSV Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 max-w-2xl w-full p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-2xl w-full p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-150 relative overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Modal Ambient Light */}
             <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary-500/10 rounded-full blur-[60px] pointer-events-none" />
 
