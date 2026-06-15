@@ -47,27 +47,31 @@ export const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden font-sans flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Decorative Glowing Background Blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-primary-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[70%] rounded-full bg-indigo-600/15 blur-[130px] pointer-events-none" />
+
+      <div className="max-w-md w-full space-y-8 bg-white/[0.03] backdrop-blur-xl p-8 rounded-3xl border border-white/[0.06] shadow-2xl relative z-10">
         <div>
           <div className="flex justify-center">
-            <div className="w-12 h-12 rounded-xl bg-primary-600 flex items-center justify-center text-white text-2xl font-bold shadow-md shadow-primary-200">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-primary-650 to-indigo-650 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-primary-500/20">
               $
             </div>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white tracking-tight bg-clip-text bg-gradient-to-r from-white to-slate-300">
             Create a new account
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">
+          <p className="mt-2 text-center text-sm text-slate-400">
             Or{' '}
-            <Link to="/login" className="font-semibold text-primary-600 hover:text-primary-500">
+            <Link to="/login" className="font-semibold text-primary-455 hover:text-primary-400 transition-colors">
               sign in to your existing account
             </Link>
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm text-center">
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm text-center">
             {error}
           </div>
         )}
@@ -75,7 +79,7 @@ export const Register: React.FC = () => {
         <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
           <div className="rounded-md space-y-4">
             <div>
-              <label htmlFor="full-name" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="full-name" className="block text-sm font-semibold text-slate-350 mb-1.5">
                 Full Name
               </label>
               <input
@@ -85,12 +89,12 @@ export const Register: React.FC = () => {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-200 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-slate-50/50 hover:bg-slate-50 transition-all"
+                className="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/10 placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 transition-all sm:text-sm"
                 placeholder="Alice Smith"
               />
             </div>
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="email-address" className="block text-sm font-semibold text-slate-350 mb-1.5">
                 Email Address
               </label>
               <input
@@ -101,12 +105,12 @@ export const Register: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-200 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-slate-50/50 hover:bg-slate-50 transition-all"
+                className="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/10 placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 transition-all sm:text-sm"
                 placeholder="you@example.com"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-350 mb-1.5">
                 Password
               </label>
               <input
@@ -116,12 +120,12 @@ export const Register: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-200 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-slate-50/50 hover:bg-slate-50 transition-all"
+                className="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/10 placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 transition-all sm:text-sm"
                 placeholder="At least 6 characters"
               />
             </div>
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="confirm-password" className="block text-sm font-semibold text-slate-350 mb-1.5">
                 Confirm Password
               </label>
               <input
@@ -131,7 +135,7 @@ export const Register: React.FC = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-slate-200 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-slate-50/50 hover:bg-slate-50 transition-all"
+                className="appearance-none rounded-xl relative block w-full px-4 py-3 bg-white/5 border border-white/10 placeholder-slate-500 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 transition-all sm:text-sm"
                 placeholder="••••••••"
               />
             </div>
@@ -141,7 +145,7 @@ export const Register: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg shadow-primary-200 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-550 hover:to-indigo-550 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg shadow-primary-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none"
             >
               {loading ? (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
