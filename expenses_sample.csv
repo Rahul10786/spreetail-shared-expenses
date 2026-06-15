@@ -1,7 +1,0 @@
-description,amount,date,paidBy,splitType,participants
-Team Lunch,90.00,2026-06-10,alice@example.com,EQUAL,alice@example.com;bob@example.com;charlie@example.com
-Office Supplies,120.00,2026-06-11,bob@example.com,EXACT,alice@example.com:40.00;bob@example.com:50.00;charlie@example.com:30.00
-Internet Bill,100.00,2026-06-12,charlie@example.com,PERCENTAGE,alice@example.com:20;bob@example.com:30;charlie@example.com:50
-Team Lunch,90.00,2026-06-10,alice@example.com,EQUAL,alice@example.com;bob@example.com;charlie@example.com
-Consulting Fee,300.00,2028-09-01,bob@example.com,EQUAL,alice@example.com;bob@example.com
-Failed Row Test,50.00,2026-06-12,unknown_guy@example.com,EQUAL,alice@example.com;bob@example.com
