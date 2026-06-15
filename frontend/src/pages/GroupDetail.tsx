@@ -1340,85 +1340,85 @@ export const GroupDetail: React.FC = () => {
         const computedBalance = totalPaid - totalOwed + totalSent - totalReceived;
 
         return (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]">
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-2xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh] shadow-2xl">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800 font-sans">Balance Audit Trail</h3>
-                  <p className="text-slate-500 text-xs mt-0.5 font-sans">Detailed breakdown for {selectedAuditUser.name}</p>
+                  <h3 className="text-xl font-bold text-white font-sans">Balance Audit Trail</h3>
+                  <p className="text-slate-400 text-xs mt-0.5 font-sans">Detailed breakdown for {selectedAuditUser.name}</p>
                 </div>
-                <button onClick={() => setSelectedAuditUser(null)} className="text-slate-400 hover:text-slate-600 text-lg p-1">✕</button>
+                <button onClick={() => setSelectedAuditUser(null)} className="text-slate-400 hover:text-white text-lg p-1 transition-colors">✕</button>
               </div>
 
               <div className="space-y-6 font-sans">
                 {/* Summary cards */}
                 <div className="grid grid-cols-4 gap-3 text-center">
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">Total Paid</p>
-                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalPaid.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-white font-sans">₹{totalPaid.toFixed(2)}</p>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">My Shares</p>
-                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalOwed.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-white font-sans">₹{totalOwed.toFixed(2)}</p>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">Settled Out</p>
-                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalSent.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-white font-sans">₹{totalSent.toFixed(2)}</p>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100/50">
+                  <div className="bg-white/[0.02] p-3 rounded-xl border border-white/5">
                     <p className="text-slate-400 text-[10px] uppercase font-bold">Settled In</p>
-                    <p className="text-sm font-extrabold text-slate-700 font-sans">₹{totalReceived.toFixed(2)}</p>
+                    <p className="text-sm font-extrabold text-white font-sans">₹{totalReceived.toFixed(2)}</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl flex justify-between items-center text-sm font-bold bg-slate-50 border border-slate-100">
-                  <span className="text-slate-600 font-medium">Audit Formula: Paid - Shares + Sent - Received</span>
-                  <span className={computedBalance >= 0 ? 'text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg' : 'text-red-600 bg-red-50 px-2.5 py-1 rounded-lg'}>
+                <div className="p-4 rounded-xl flex justify-between items-center text-sm font-bold bg-white/[0.02] border border-white/5">
+                  <span className="text-slate-350 font-medium">Audit Formula: Paid - Shares + Sent - Received</span>
+                  <span className={computedBalance >= 0 ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg' : 'text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg'}>
                     ₹{computedBalance.toFixed(2)}
                   </span>
                 </div>
 
                 {/* Detailed Ledger List */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  <h4 className="font-bold text-slate-800 text-sm">Ledger Entries</h4>
+                  <h4 className="font-bold text-slate-300 text-sm">Ledger Entries</h4>
                   
                   {userPaid.map(e => (
-                    <div key={e.id} className="p-3 bg-emerald-50/35 border border-emerald-100/50 rounded-xl flex justify-between items-center text-xs">
+                    <div key={e.id} className="p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl flex justify-between items-center text-xs">
                       <div>
-                        <span className="font-bold text-slate-800">Paid: {e.description}</span>
+                        <span className="font-bold text-slate-200">Paid: {e.description}</span>
                         <span className="text-slate-400 block mt-0.5">{new Date(e.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-bold text-emerald-600">+₹{e.amount.toFixed(2)}</span>
+                      <span className="font-bold text-emerald-400">+₹{e.amount.toFixed(2)}</span>
                     </div>
                   ))}
 
                   {userOwed.map(e => (
-                    <div key={e.id} className="p-3 bg-red-50/35 border border-red-100/50 rounded-xl flex justify-between items-center text-xs">
+                    <div key={e.id} className="p-3 bg-red-500/5 border border-red-500/15 rounded-xl flex justify-between items-center text-xs">
                       <div>
-                        <span className="font-bold text-slate-800">Owed Share: {e.description}</span>
+                        <span className="font-bold text-slate-200">Owed Share: {e.description}</span>
                         <span className="text-slate-400 block mt-0.5">Paid by {group.members.find(m => m.userId === e.paidById)?.user.name} on {new Date(e.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-bold text-red-600">-₹{e.myShare.toFixed(2)}</span>
+                      <span className="font-bold text-red-400">-₹{e.myShare.toFixed(2)}</span>
                     </div>
                   ))}
 
                   {settlementsSent.map(s => (
-                    <div key={s.id} className="p-3 bg-blue-50/35 border border-blue-100/50 rounded-xl flex justify-between items-center text-xs">
+                    <div key={s.id} className="p-3 bg-blue-500/5 border border-blue-500/15 rounded-xl flex justify-between items-center text-xs">
                       <div>
-                        <span className="font-bold text-slate-800">Sent Settlement to {s.payTo.name}</span>
+                        <span className="font-bold text-slate-200">Sent Settlement to {s.payTo.name}</span>
                         <span className="text-slate-400 block mt-0.5">{new Date(s.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-bold text-blue-600">+₹{s.amount.toFixed(2)}</span>
+                      <span className="font-bold text-blue-400">+₹{s.amount.toFixed(2)}</span>
                     </div>
                   ))}
 
                   {settlementsReceived.map(s => (
-                    <div key={s.id} className="p-3 bg-amber-50/35 border border-amber-100/50 rounded-xl flex justify-between items-center text-xs">
+                    <div key={s.id} className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl flex justify-between items-center text-xs">
                       <div>
-                        <span className="font-bold text-slate-800">Received Settlement from {s.payFrom.name}</span>
+                        <span className="font-bold text-slate-200">Received Settlement from {s.payFrom.name}</span>
                         <span className="text-slate-400 block mt-0.5">{new Date(s.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-bold text-amber-600">-₹{s.amount.toFixed(2)}</span>
+                      <span className="font-bold text-amber-400">-₹{s.amount.toFixed(2)}</span>
                     </div>
                   ))}
 
@@ -1428,10 +1428,10 @@ export const GroupDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
+              <div className="flex justify-end pt-4 border-t border-white/5 mt-6">
                 <button
                   onClick={() => setSelectedAuditUser(null)}
-                  className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors"
+                  className="py-2.5 px-4 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors"
                 >
                   Close Audit Trail
                 </button>
