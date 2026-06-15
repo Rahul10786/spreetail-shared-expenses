@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import prisma from '../prisma';
+import bcrypt from 'bcryptjs';
 
 // Create a Group
 export async function createGroup(req: AuthRequest, res: Response) {
@@ -212,13 +213,23 @@ export async function addMember(req: AuthRequest, res: Response) {
       return res.status(403).json({ error: 'You must be an active member of this group to invite others.' });
     }
 
-    // 2. Find target user by email
-    const targetUser = await prisma.user.findUnique({
+    // 2. Find target user by email, or create a new one automatically if not registered
+    let targetUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
 
     if (!targetUser) {
-      return res.status(404).json({ error: 'User not found. They must register first.' });
+      const emailPrefix = email.split('@')[0];
+      const displayName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+      const hashedPassword = await bcrypt.hash('password123', 10);
+
+      targetUser = await prisma.user.create({
+        data: {
+          email: email.toLowerCase(),
+          name: displayName,
+          password: hashedPassword,
+        },
+      });
     }
 
     const parsedJoinDate = joinDate ? new Date(joinDate) : new Date();
