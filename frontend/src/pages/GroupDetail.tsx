@@ -302,6 +302,18 @@ export const GroupDetail: React.FC = () => {
     }
   };
 
+  // Handle Group deletion
+  const handleDeleteGroup = async () => {
+    if (!window.confirm('Are you sure you want to delete this group? All expenses, settlements, and member relationships will be permanently deleted. This action cannot be undone.')) return;
+    try {
+      await api.delete(`/groups/${groupId}`);
+      toast('Group deleted successfully.', 'success');
+      window.location.href = '/';
+    } catch (err: any) {
+      toast(err.message || 'Failed to delete group.', 'error');
+    }
+  };
+
   // Handle Participant check toggles
   const handleParticipantToggle = (userId: string) => {
     setExpParticipants((prev) => ({
@@ -533,10 +545,10 @@ export const GroupDetail: React.FC = () => {
 
   if (loading && !group) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <svg className="animate-spin h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+        <svg className="animate-spin h-9 w-9 text-primary-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
       </div>
     );
@@ -544,11 +556,12 @@ export const GroupDetail: React.FC = () => {
 
   if (error || !group) {
     return (
-      <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center justify-center">
-        <div className="bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-2xl max-w-md text-center">
-          <p className="font-bold">Error loading page</p>
-          <p className="text-sm mt-1">{error || 'Group not found.'}</p>
-          <Link to="/" className="inline-block mt-4 text-sm font-semibold bg-red-100 px-4 py-2 rounded-xl">
+      <div className="min-h-screen bg-slate-950 p-8 flex flex-col items-center justify-center text-slate-100 relative">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-primary-600/20 blur-[120px] pointer-events-none" />
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 text-white px-8 py-6 rounded-3xl max-w-md text-center shadow-2xl relative z-10">
+          <p className="font-extrabold text-xl">Error loading group</p>
+          <p className="text-sm text-slate-400 mt-2">{error || 'Group not found.'}</p>
+          <Link to="/" className="inline-block mt-6 text-sm font-semibold bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-550 hover:to-indigo-550 px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-primary-500/20">
             Return to Dashboard
           </Link>
         </div>
@@ -557,29 +570,38 @@ export const GroupDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-100 py-4 px-6 sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden font-sans pb-16">
+      {/* Decorative Glowing Background Blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-primary-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[70%] rounded-full bg-indigo-600/15 blur-[130px] pointer-events-none" />
+      <div className="absolute top-[40%] right-[20%] w-[35%] h-[45%] rounded-full bg-purple-600/10 blur-[100px] pointer-events-none" />
+
+      {/* Floating Glass Header */}
+      <header className="sticky top-0 z-40 bg-slate-900/40 backdrop-blur-md border-b border-white/5 py-4 px-6">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <Link to="/" className="flex items-center space-x-2 text-slate-600 hover:text-slate-900 font-semibold text-sm">
+          <Link to="/" className="flex items-center space-x-2 text-slate-350 hover:text-white font-semibold text-sm transition-colors">
             <span>← Back to Dashboard</span>
           </Link>
-          <h1 className="text-lg font-bold text-slate-800 tracking-tight">{group.name}</h1>
+          <h1 className="text-lg font-black text-white tracking-tight bg-clip-text bg-gradient-to-r from-white via-white to-slate-400">
+            {group.name}
+          </h1>
           <div className="w-24"></div> {/* spacer */}
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto py-12 px-6">
+      <main className="max-w-6xl mx-auto py-12 px-6 relative z-10">
         {/* Top Info Section */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
+        <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900">{group.name}</h2>
-            <p className="text-slate-500 text-sm mt-1">{group.description || 'No description provided.'}</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight bg-clip-text bg-gradient-to-r from-white to-slate-300">
+              {group.name}
+            </h2>
+            <p className="text-slate-400 text-sm mt-1">{group.description || 'No description provided.'}</p>
           </div>
           <div className="flex flex-wrap gap-2.5 mt-4 md:mt-0">
             <button
               onClick={() => setShowMemberModal(true)}
-              className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors"
+              className="py-2.5 px-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-sm font-semibold transition-all"
             >
               + Invite Member
             </button>
@@ -593,7 +615,7 @@ export const GroupDetail: React.FC = () => {
                 setSettleError(null);
                 setShowSettleModal(true);
               }}
-              className="py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
+              className="py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-350 border border-emerald-500/20 rounded-xl text-sm font-semibold transition-all"
             >
               Settle Up
             </button>
@@ -604,16 +626,24 @@ export const GroupDetail: React.FC = () => {
                 setImportError(null);
                 setShowImportModal(true);
               }}
-              className="py-2.5 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-semibold transition-colors"
+              className="py-2.5 px-4 bg-blue-500/10 hover:bg-blue-500/20 text-blue-350 border border-blue-500/20 rounded-xl text-sm font-semibold transition-all"
             >
               Import CSV
             </button>
             <button
               onClick={() => setShowExpenseModal(true)}
-              className="py-2.5 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-primary-200"
+              className="py-2.5 px-5 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-550 hover:to-indigo-550 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30"
             >
               + Record Expense
             </button>
+            {group.createdById === currentUser?.id && (
+              <button
+                onClick={handleDeleteGroup}
+                className="py-2.5 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 rounded-xl text-sm font-semibold transition-all"
+              >
+                Delete Group
+              </button>
+            )}
           </div>
         </div>
 
@@ -621,33 +651,33 @@ export const GroupDetail: React.FC = () => {
           {/* Members & Balances Column */}
           <div className="space-y-8 lg:col-span-1">
             {/* Balances Ledger Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Balances Ledger</h3>
+            <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-4">Balances Ledger</h3>
               <div className="space-y-3">
                 {balances.map((b) => (
                   <div
                     key={b.userId}
                     onClick={() => setSelectedAuditUser(b)}
-                    className="flex justify-between items-center py-2 px-3 hover:bg-slate-50 rounded-xl cursor-pointer border border-transparent hover:border-slate-100 transition-all text-sm group"
+                    className="flex justify-between items-center py-2.5 px-3 hover:bg-white/5 rounded-xl cursor-pointer border border-transparent hover:border-white/5 transition-all text-sm group"
                   >
-                    <span className={`font-medium group-hover:text-primary-600 transition-colors ${b.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                    <span className={`font-semibold group-hover:text-primary-400 transition-colors ${b.isActive ? 'text-slate-200' : 'text-slate-500 line-through'}`}>
                       {b.name}
                     </span>
                     <div className="flex items-center space-x-1.5">
                       {b.balance > 0 ? (
-                        <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-lg text-xs">
+                        <span className="text-emerald-450 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg text-xs">
                           is owed ₹{b.balance.toFixed(2)}
                         </span>
                       ) : b.balance < 0 ? (
-                        <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg text-xs">
+                        <span className="text-red-400 font-bold bg-red-500/10 px-2.5 py-1 rounded-lg text-xs">
                           owes ₹{Math.abs(b.balance).toFixed(2)}
                         </span>
                       ) : (
-                        <span className="text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg text-xs">
+                        <span className="text-slate-400 font-bold bg-white/5 px-2.5 py-1 rounded-lg text-xs">
                           settled up
                         </span>
                       )}
-                      <span className="text-slate-350 group-hover:text-slate-500 transition-colors text-[11px]">🔍</span>
+                      <span className="text-slate-500 group-hover:text-slate-300 transition-colors text-xs">🔍</span>
                     </div>
                   </div>
                 ))}
