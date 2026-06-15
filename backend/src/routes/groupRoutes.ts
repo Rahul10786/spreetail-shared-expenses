@@ -9,8 +9,12 @@ import {
   leaveGroup,
 } from '../controllers/groupController';
 import { authMiddleware } from '../middleware/authMiddleware';
+import expenseRoutes from './expenseRoutes';
 
 const router = Router();
+
+// Sub-resource routes
+router.use('/:groupId/expenses', expenseRoutes);
 
 // Apply authMiddleware globally to all group routes
 router.use(authMiddleware as any);
