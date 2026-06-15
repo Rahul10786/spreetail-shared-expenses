@@ -41,6 +41,8 @@ interface Settlement {
   id: string;
   amount: number;
   date: string;
+  payFromId: string;
+  payToId: string;
   payFrom: User;
   payTo: User;
 }
@@ -56,11 +58,29 @@ interface GroupDetailData {
   settlements: Settlement[];
 }
 
+interface UserBalance {
+  userId: string;
+  name: string;
+  email: string;
+  balance: number;
+  isActive: boolean;
+}
+
+interface SuggestedSettlement {
+  fromUserId: string;
+  fromName: string;
+  toUserId: string;
+  toName: string;
+  amount: number;
+}
+
 export const GroupDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const { user: currentUser } = useAuth();
 
   const [group, setGroup] = useState<GroupDetailData | null>(null);
+  const [balances, setBalances] = useState<UserBalance[]>([]);
+  const [suggestedSettlements, setSuggestedSettlements] = useState<SuggestedSettlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,17 +102,34 @@ export const GroupDetail: React.FC = () => {
   const [expenseLoading, setExpenseLoading] = useState(false);
   const [expenseError, setExpenseError] = useState<string | null>(null);
 
+  // Settlement modal states
+  const [showSettleModal, setShowSettleModal] = useState(false);
+  const [settleFromId, setSettleFromId] = useState('');
+  const [settleToId, setSettleToId] = useState('');
+  const [settleAmount, setSettleAmount] = useState('');
+  const [settleDate, setSettleDate] = useState(new Date().toISOString().substring(0, 10));
+  const [settleLoading, setSettleLoading] = useState(false);
+  const [settleError, setSettleError] = useState<string | null>(null);
+
   const fetchGroupDetail = async () => {
     if (!groupId) return;
     try {
       setLoading(true);
-      const res = await api.get<{ group: GroupDetailData }>(`/groups/${groupId}`);
-      setGroup(res.group);
+      
+      // Fetch details and balances in parallel
+      const [detailRes, balanceRes] = await Promise.all([
+        api.get<{ group: GroupDetailData }>(`/groups/${groupId}`),
+        api.get<{ balances: UserBalance[]; suggestedSettlements: SuggestedSettlement[] }>(`/groups/${groupId}/balances`)
+      ]);
+
+      setGroup(detailRes.group);
+      setBalances(balanceRes.balances);
+      setSuggestedSettlements(balanceRes.suggestedSettlements);
       setError(null);
 
       // Pre-fill default paidById for expense creation
-      if (res.group.members.length > 0) {
-        const activeMembers = res.group.members.filter(m => m.isActive);
+      if (detailRes.group.members.length > 0) {
+        const activeMembers = detailRes.group.members.filter(m => m.isActive);
         const currentIsActive = activeMembers.find(m => m.userId === currentUser?.id);
         setExpPaidById(currentIsActive ? currentUser?.id || '' : activeMembers[0]?.userId || '');
 
@@ -247,6 +284,56 @@ export const GroupDetail: React.FC = () => {
     }
   };
 
+  // Open Settle Modal pre-filled
+  const openSettleModalPrefilled = (fromId: string, toId: string, amount: number) => {
+    setSettleFromId(fromId);
+    setSettleToId(toId);
+    setSettleAmount(amount.toString());
+    setSettleDate(new Date().toISOString().substring(0, 10));
+    setSettleError(null);
+    setShowSettleModal(true);
+  };
+
+  // Submit Settlement
+  const handleRecordSettlement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settleFromId || !settleToId || !settleAmount) {
+      setSettleError('Please fill in all fields.');
+      return;
+    }
+
+    const amountVal = parseFloat(settleAmount);
+    if (isNaN(amountVal) || amountVal <= 0) {
+      setSettleError('Amount must be a positive number.');
+      return;
+    }
+
+    if (settleFromId === settleToId) {
+      setSettleError('Members must be different.');
+      return;
+    }
+
+    setSettleLoading(true);
+    setSettleError(null);
+
+    try {
+      await api.post(`/groups/${groupId}/settlements`, {
+        payFromId: settleFromId,
+        payToId: settleToId,
+        amount: amountVal,
+        date: new Date(settleDate).toISOString(),
+      });
+
+      setShowSettleModal(false);
+      setSettleAmount('');
+      await fetchGroupDetail();
+    } catch (err: any) {
+      setSettleError(err.message || 'Failed to record settlement.');
+    } finally {
+      setSettleLoading(false);
+    }
+  };
+
   const activeMembers = group?.members.filter(m => m.isActive) || [];
 
   if (loading && !group) {
@@ -294,12 +381,24 @@ export const GroupDetail: React.FC = () => {
             <h2 className="text-2xl font-extrabold text-slate-900">{group.name}</h2>
             <p className="text-slate-500 text-sm mt-1">{group.description || 'No description provided.'}</p>
           </div>
-          <div className="flex space-x-3 mt-4 md:mt-0">
+          <div className="flex flex-wrap gap-2.5 mt-4 md:mt-0">
             <button
               onClick={() => setShowMemberModal(true)}
               className="py-2.5 px-4 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-semibold text-slate-700 transition-colors"
             >
               + Invite Member
+            </button>
+            <button
+              onClick={() => {
+                setSettleFromId(activeMembers[0]?.userId || '');
+                setSettleToId(activeMembers[1]?.userId || '');
+                setSettleAmount('');
+                setSettleError(null);
+                setShowSettleModal(true);
+              }}
+              className="py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
+            >
+              Settle Up
             </button>
             <button
               onClick={() => setShowExpenseModal(true)}
@@ -311,8 +410,65 @@ export const GroupDetail: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Members Column */}
+          {/* Members & Balances Column */}
           <div className="space-y-8 lg:col-span-1">
+            {/* Balances Ledger Card */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Balances Ledger</h3>
+              <div className="space-y-3">
+                {balances.map((b) => (
+                  <div key={b.userId} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0 text-sm">
+                    <span className={`font-medium ${b.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                      {b.name}
+                    </span>
+                    {b.balance > 0 ? (
+                      <span className="text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded-lg text-xs">
+                        is owed ${b.balance.toFixed(2)}
+                      </span>
+                    ) : b.balance < 0 ? (
+                      <span className="text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg text-xs">
+                        owes ${Math.abs(b.balance).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-medium bg-slate-50 px-2 py-1 rounded-lg text-xs">
+                        settled up
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Suggested Settlements (simplification) */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Suggested Settlements</h3>
+              {suggestedSettlements.length === 0 ? (
+                <div className="p-4 bg-emerald-50 text-emerald-800 text-center rounded-xl text-xs font-semibold">
+                  🎉 Everyone is fully settled up!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {suggestedSettlements.map((s, idx) => (
+                    <div key={idx} className="p-3 bg-slate-55 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
+                      <div>
+                        <span className="font-semibold text-slate-700">{s.fromName}</span>
+                        <span className="text-slate-400 mx-1">owes</span>
+                        <span className="font-semibold text-slate-700">{s.toName}</span>
+                        <div className="font-bold text-slate-950 mt-1 text-sm">${s.amount.toFixed(2)}</div>
+                      </div>
+                      <button
+                        onClick={() => openSettleModalPrefilled(s.fromUserId, s.toUserId, s.amount)}
+                        className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors"
+                      >
+                        Settle
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Active Members list */}
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-lg font-bold text-slate-800 mb-4">Active Members ({activeMembers.length})</h3>
               <div className="space-y-4">
@@ -328,7 +484,7 @@ export const GroupDetail: React.FC = () => {
                         {member.leaveDate && ` • Left ${new Date(member.leaveDate).toLocaleDateString()}`}
                       </p>
                     </div>
-                    {member.isActive && member.userId !== group.createdAt && (
+                    {member.isActive && member.userId !== group.createdById && (
                       <button
                         onClick={() => handleRemoveMember(member.userId)}
                         className="text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 px-2 py-1 rounded-lg"
@@ -340,18 +496,11 @@ export const GroupDetail: React.FC = () => {
                 ))}
               </div>
             </div>
-
-            {/* Balances Placeholder Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Balances Summary</h3>
-              <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
-                Balances resolving and debt matrix simplification will be computed in Milestone 6.
-              </div>
-            </div>
           </div>
 
-          {/* Expenses Column */}
+          {/* Expenses & Settlements Column */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Expenses Card */}
             <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
               <h3 className="text-lg font-bold text-slate-800 mb-6">Group Expenses</h3>
               {group.expenses.length === 0 ? (
@@ -387,6 +536,40 @@ export const GroupDetail: React.FC = () => {
                           </button>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Settlements History Card */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <h3 className="text-lg font-bold text-slate-800 mb-6">Settlement Payments History</h3>
+              {group.settlements.length === 0 ? (
+                <div className="text-center py-10 text-slate-500 text-sm font-medium bg-slate-50/55 rounded-2xl border border-dashed border-slate-150">
+                  No settlements recorded yet.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {group.settlements.map((settlement) => (
+                    <div key={settlement.id} className="p-4 rounded-xl border border-slate-100 flex justify-between items-center text-sm hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm">
+                          ✓
+                        </div>
+                        <div>
+                          <p className="text-slate-700">
+                            <strong className="font-semibold text-slate-800">{settlement.payFrom.name}</strong> paid{' '}
+                            <strong className="font-semibold text-slate-800">{settlement.payTo.name}</strong>
+                          </p>
+                          <p className="text-slate-400 text-[10px] mt-0.5">
+                            {new Date(settlement.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                        ${settlement.amount.toFixed(2)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -597,6 +780,95 @@ export const GroupDetail: React.FC = () => {
                   className="py-2.5 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-primary-200 flex items-center space-x-2"
                 >
                   {expenseLoading ? 'Saving...' : 'Save Expense'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Settle Up (Settlement) Modal */}
+      {showSettleModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-slate-800">Record Settlement</h3>
+              <button onClick={() => setShowSettleModal(false)} className="text-slate-400 hover:text-slate-600 text-lg p-1">✕</button>
+            </div>
+
+            {settleError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-sm mb-4 text-center">
+                {settleError}
+              </div>
+            )}
+
+            <form onSubmit={handleRecordSettlement} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pay From (Debtor)</label>
+                <select
+                  value={settleFromId}
+                  onChange={(e) => setSettleFromId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                >
+                  {activeMembers.map((m) => (
+                    <option key={m.userId} value={m.userId}>{m.user.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pay To (Creditor)</label>
+                <select
+                  value={settleToId}
+                  onChange={(e) => setSettleToId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                >
+                  {activeMembers.map((m) => (
+                    <option key={m.userId} value={m.userId}>{m.user.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={settleAmount}
+                    onChange={(e) => setSettleAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={settleDate}
+                    onChange={(e) => setSettleDate(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSettleModal(false)}
+                  className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={settleLoading}
+                  className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-200 flex items-center space-x-2"
+                >
+                  {settleLoading ? 'Recording...' : 'Record Payment'}
                 </button>
               </div>
             </form>

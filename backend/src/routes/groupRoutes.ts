@@ -8,6 +8,7 @@ import {
   addMember,
   leaveGroup,
 } from '../controllers/groupController';
+import { getGroupBalances, createSettlement } from '../controllers/settlementController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import expenseRoutes from './expenseRoutes';
 
@@ -28,5 +29,9 @@ router.delete('/:groupId', deleteGroup);
 // Member routes
 router.post('/:groupId/members', addMember);
 router.post('/:groupId/members/:userId/leave', leaveGroup);
+
+// Balance and Settlement routes
+router.get('/:groupId/balances', getGroupBalances);
+router.post('/:groupId/settlements', createSettlement);
 
 export default router;
