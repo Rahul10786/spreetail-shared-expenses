@@ -886,15 +886,15 @@ export const GroupDetail: React.FC = () => {
 
       {/* Add Expense Modal */}
       {showExpenseModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-xl w-full p-6 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto max-h-[90vh] shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800">Record Expense</h3>
+              <h3 className="text-xl font-bold text-white">Record Expense</h3>
               <button onClick={() => setShowExpenseModal(false)} className="text-slate-400 hover:text-slate-600 text-lg p-1">✕</button>
             </div>
 
             {expenseError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2.5 rounded-xl text-sm mb-4 text-center">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2.5 rounded-xl text-sm mb-4 text-center">
                 {expenseError}
               </div>
             )}
@@ -902,19 +902,19 @@ export const GroupDetail: React.FC = () => {
             <form onSubmit={handleAddExpense} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Description</label>
                   <input
                     type="text"
                     required
                     value={expDescription}
                     onChange={(e) => setExpDescription(e.target.value)}
                     placeholder="e.g. Dinner, Rent, Electricity"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 text-sm placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Amount (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -922,39 +922,39 @@ export const GroupDetail: React.FC = () => {
                     value={expAmount}
                     onChange={(e) => setExpAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 text-sm placeholder:text-slate-550 placeholder:text-slate-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Date</label>
                   <input
                     type="date"
                     required
                     value={expDate}
                     onChange={(e) => setExpDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 text-sm color-scheme-dark"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Paid By</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Paid By</label>
                   <select
                     value={expPaidById}
                     onChange={(e) => setExpPaidById(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-900 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                   >
                     {expenseMembers.map((m) => (
-                      <option key={m.userId} value={m.userId}>{m.user.name}</option>
+                      <option key={m.userId} value={m.userId} className="bg-slate-900 text-white">{m.user.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Split Type</label>
+                <label className="block text-sm font-semibold text-slate-350 mb-1.5">Split Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {['EQUAL', 'EXACT', 'PERCENTAGE'].map((type) => (
                     <button
@@ -963,8 +963,8 @@ export const GroupDetail: React.FC = () => {
                       onClick={() => setExpSplitType(type)}
                       className={`py-2 px-3 text-xs font-semibold rounded-lg border transition-all ${
                         expSplitType === type
-                          ? 'border-primary-600 bg-primary-50 text-primary-700 font-bold'
-                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          ? 'border-primary-500 bg-primary-600/10 text-primary-400 font-bold'
+                          : 'border-white/10 text-slate-300 hover:bg-white/5'
                       }`}
                     >
                       {type}
@@ -975,20 +975,20 @@ export const GroupDetail: React.FC = () => {
 
               {/* Participants Split Matrix */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Split Participants</label>
-                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-52 overflow-y-auto">
+                <label className="block text-sm font-semibold text-slate-350 mb-2">Split Participants</label>
+                <div className="space-y-3 bg-white/[0.02] p-4 rounded-xl border border-white/5 max-h-52 overflow-y-auto">
                   {expenseMembers.map((m) => {
                     const part = expParticipants[m.userId] || { checked: false, value: '' };
                     return (
-                      <div key={m.userId} className="flex justify-between items-center text-sm">
+                      <div key={m.userId} className="flex justify-between items-center text-sm py-1">
                         <label className="flex items-center space-x-3 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={part.checked}
                             onChange={() => handleParticipantToggle(m.userId)}
-                            className="rounded text-primary-600 focus:ring-primary-500 h-4 w-4"
+                            className="rounded text-primary-500 focus:ring-primary-500 h-4 w-4 bg-white/5 border-white/10"
                           />
-                          <span className="font-medium text-slate-700">{m.user.name}</span>
+                          <span className="font-medium text-slate-200">{m.user.name}</span>
                         </label>
 
                         {part.checked && expSplitType !== 'EQUAL' && (
@@ -1001,7 +1001,7 @@ export const GroupDetail: React.FC = () => {
                               value={part.value}
                               onChange={(e) => handleParticipantValueChange(m.userId, e.target.value)}
                               placeholder={expSplitType === 'PERCENTAGE' ? '0' : '0.00'}
-                              className="w-20 px-2 py-1 border border-slate-200 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-center text-xs"
+                              className="w-24 px-2.5 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-center text-xs placeholder:text-slate-500"
                             />
                           </div>
                         )}
@@ -1011,18 +1011,18 @@ export const GroupDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowExpenseModal(false)}
-                  className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="py-2.5 px-4 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={expenseLoading}
-                  className="py-2.5 px-5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-primary-200 flex items-center space-x-2"
+                  className="py-2.5 px-5 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-550 hover:to-indigo-550 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary-500/20 flex items-center space-x-2"
                 >
                   {expenseLoading ? 'Saving...' : 'Save Expense'}
                 </button>
