@@ -746,36 +746,36 @@ export const GroupDetail: React.FC = () => {
           {/* Expenses & Settlements Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Expenses Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-6">Group Expenses</h3>
+            <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-6">Group Expenses</h3>
               {group.expenses.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 text-sm font-medium">
+                <div className="text-center py-12 text-slate-450 text-sm font-medium">
                   No expenses recorded yet. Record an expense to see it here!
                 </div>
               ) : (
                 <div className="space-y-6">
                   {group.expenses.map((expense) => (
-                    <div key={expense.id} className="flex justify-between items-start p-4 rounded-xl hover:bg-slate-50 border border-slate-100/50 transition-colors">
-                      <div className="space-y-1">
-                        <h4 className="font-bold text-slate-800">{expense.description}</h4>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-slate-500 text-xs">
-                          <span>Paid by <strong className="text-slate-700">{expense.paidBy.name}</strong></span>
+                    <div key={expense.id} className="flex justify-between items-start p-4 rounded-2xl hover:bg-white/[0.03] border border-white/5 bg-white/[0.01] transition-all">
+                      <div className="space-y-1.5">
+                        <h4 className="font-bold text-white">{expense.description}</h4>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 text-slate-400 text-xs">
+                          <span>Paid by <strong className="text-slate-200">{expense.paidBy.name}</strong></span>
                           <span>•</span>
                           <span>{new Date(expense.date).toLocaleDateString()}</span>
                           <span>•</span>
-                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-slate-600">{expense.splitType}</span>
+                          <span className="bg-white/5 px-2 py-0.5 rounded text-[10px] uppercase font-bold text-slate-300 border border-white/5">{expense.splitType}</span>
                         </div>
-                        <div className="text-slate-400 text-xs pt-2">
-                          <strong>Participants: </strong>
+                        <div className="text-slate-500 text-xs pt-1.5">
+                          <strong className="text-slate-400">Participants: </strong>
                           {expense.splits.map(s => `${s.user.name} (₹${s.amount.toFixed(2)})`).join(', ')}
                         </div>
                       </div>
                       <div className="flex flex-col items-end space-y-2">
-                        <span className="text-lg font-extrabold text-slate-800">₹{expense.amount.toFixed(2)}</span>
+                        <span className="text-lg font-extrabold text-white">₹{expense.amount.toFixed(2)}</span>
                         {(expense.paidById === currentUser?.id || group.createdById === currentUser?.id) && (
                           <button
                             onClick={() => handleDeleteExpense(expense.id)}
-                            className="text-xs text-red-500 hover:text-red-700 font-semibold"
+                            className="text-xs text-red-400 hover:text-red-350 font-semibold transition-colors"
                           >
                             Delete
                           </button>
@@ -788,31 +788,31 @@ export const GroupDetail: React.FC = () => {
             </div>
 
             {/* Settlements History Card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-6">Settlement Payments History</h3>
+            <div className="bg-white/[0.03] backdrop-blur-xl p-6 rounded-3xl border border-white/[0.06] shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-6">Settlement Payments History</h3>
               {group.settlements.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 text-sm font-medium bg-slate-50/55 rounded-2xl border border-dashed border-slate-150">
+                <div className="text-center py-10 text-slate-450 text-sm font-medium bg-white/[0.01] rounded-2xl border border-dashed border-white/10">
                   No settlements recorded yet.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {group.settlements.map((settlement) => (
-                    <div key={settlement.id} className="p-4 rounded-xl border border-slate-100 flex justify-between items-center text-sm hover:bg-slate-50 transition-colors">
+                    <div key={settlement.id} className="p-4 rounded-xl border border-white/5 bg-slate-900/40 flex justify-between items-center text-sm hover:bg-white/[0.02] transition-colors">
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-sm">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm">
                           ✓
                         </div>
                         <div>
-                          <p className="text-slate-700">
-                            <strong className="font-semibold text-slate-800">{settlement.payFrom.name}</strong> paid{' '}
-                            <strong className="font-semibold text-slate-800">{settlement.payTo.name}</strong>
+                          <p className="text-slate-300">
+                            <strong className="font-semibold text-white">{settlement.payFrom.name}</strong> paid{' '}
+                            <strong className="font-semibold text-white">{settlement.payTo.name}</strong>
                           </p>
-                          <p className="text-slate-400 text-[10px] mt-0.5">
+                          <p className="text-slate-500 text-[10px] mt-0.5">
                             {new Date(settlement.date).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
-                      <span className="text-sm font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                      <span className="text-sm font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-lg">
                         ₹{settlement.amount.toFixed(2)}
                       </span>
                     </div>
