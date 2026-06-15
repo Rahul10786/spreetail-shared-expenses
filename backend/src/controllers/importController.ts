@@ -50,6 +50,49 @@ function parseDDMMYYYY(dateStr: string): Date | null {
   return new Date(year, month - 1, day);
 }
 
+function getRowValue(row: any, keys: string[]): string | undefined {
+  const rowKeys = Object.keys(row);
+  for (const k of keys) {
+    if (row[k] !== undefined) return row[k];
+    const cleanKey = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const foundKey = rowKeys.find(rk => rk.toLowerCase().replace(/[^a-z0-9]/g, '') === cleanKey);
+    if (foundKey) return row[foundKey];
+  }
+  return undefined;
+}
+
+interface ExchangeRates {
+  [currency: string]: number;
+}
+
+const FALLBACK_RATES: ExchangeRates = {
+  INR: 1.0,
+  USD: 0.012,
+  EUR: 0.011,
+  GBP: 0.0095,
+  AUD: 0.018,
+  CAD: 0.016,
+  JPY: 1.88,
+  SGD: 0.016,
+};
+
+async function fetchRealTimeRates(): Promise<ExchangeRates> {
+  if (typeof fetch !== 'function') {
+    return FALLBACK_RATES;
+  }
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/INR');
+    if (!res.ok) throw new Error('API response not OK');
+    const data = (await res.json()) as any;
+    if (data && data.result === 'success' && data.rates) {
+      return data.rates;
+    }
+  } catch (error) {
+    console.error('Failed to fetch real-time exchange rates, using fallback:', error);
+  }
+  return FALLBACK_RATES;
+}
+
 // Upload CSV and Scan for Anomalies
 export async function uploadCSV(req: AuthRequest, res: Response) {
   const { groupId } = req.params;
@@ -59,6 +102,8 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
   try {
+    const exchangeRates = await fetchRealTimeRates();
+
     // Verify user is active group member
     const requesterMembership = await prisma.groupMember.findUnique({
       where: { groupId_userId: { groupId, userId } },
@@ -102,14 +147,18 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       rowIndex++;
       const rawDataString = JSON.stringify(row);
 
-      const dateStr = row.date?.trim();
-      const description = row.description?.trim();
-      const paidBy = row.paid_by?.trim();
-      const amountStr = row.amount?.trim()?.replace(/,/g, ''); // Clean commas e.g. "1,200"
-      const currency = row.currency?.trim()?.toUpperCase();
-      const splitTypeStr = row.split_type?.trim()?.toLowerCase();
-      const splitWith = row.split_with?.trim();
-      const splitDetails = row.split_details?.trim();
+      const dateStr = getRowValue(row, ['date', 'Date'])?.trim();
+      let description = getRowValue(row, ['description', 'Description', 'desc'])?.trim() || '';
+      const notes = getRowValue(row, ['notes', 'Notes', 'note', 'Note'])?.trim();
+      if (notes) {
+        description = `${description} (${notes})`.trim();
+      }
+      const paidBy = getRowValue(row, ['paid_by', 'paidby', 'paidBy', 'Paid By', 'Paid_By'])?.trim();
+      const amountStr = getRowValue(row, ['amount', 'Amount'])?.trim()?.replace(/,/g, ''); // Clean commas e.g. "1,200"
+      const currency = getRowValue(row, ['currency', 'Currency'])?.trim()?.toUpperCase();
+      const splitTypeStr = getRowValue(row, ['split_type', 'splitType', 'Split Type', 'Split_Type', 'split_with_type'])?.trim()?.toLowerCase();
+      const splitWith = getRowValue(row, ['split_with', 'splitWith', 'Split With', 'Split_With', 'split_with_members'])?.trim();
+      const splitDetails = getRowValue(row, ['split_details', 'splitDetails', 'Split Details', 'Split_Details', 'split_values'])?.trim();
 
       // Check 1: Missing critical fields (Date, Description, Amount)
       if (!dateStr || !description || !amountStr) {
@@ -164,26 +213,30 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
       }
 
       let currencyMessage = '';
-      if (currency === 'USD') {
-        const rate = 94.66;
-        const converted = amount * rate;
-        currencyMessage = `Converted $${amount} USD to ₹${converted.toFixed(2)} INR at today's rate of 1 USD = ₹${rate}.`;
-        amount = converted;
-        anomalies.push({
-          rowNumber: rowIndex,
-          severity: 'WARNING',
-          type: 'CURRENCY_MISMATCH',
-          message: currencyMessage,
-          rawData: rawDataString,
-        });
-      } else if (currency && currency !== 'INR') {
-        anomalies.push({
-          rowNumber: rowIndex,
-          severity: 'WARNING',
-          type: 'CURRENCY_MISMATCH',
-          message: `Foreign currency "${currency}" detected. The system resolves all balances in base currency (INR).`,
-          rawData: rawDataString,
-        });
+      if (currency && currency !== 'INR') {
+        const rateInBase = exchangeRates[currency];
+        if (rateInBase) {
+          const inrRate = 1 / rateInBase;
+          const converted = amount * inrRate;
+          currencyMessage = `Converted ${amount} ${currency} to ₹${converted.toFixed(2)} INR using real-time rate of 1 ${currency} = ₹${inrRate.toFixed(4)} INR.`;
+          amount = converted;
+          anomalies.push({
+            rowNumber: rowIndex,
+            severity: 'WARNING',
+            type: 'CURRENCY_MISMATCH',
+            message: currencyMessage,
+            rawData: rawDataString,
+          });
+        } else {
+          anomalies.push({
+            rowNumber: rowIndex,
+            severity: 'ERROR',
+            type: 'CURRENCY_MISMATCH',
+            message: `Foreign currency "${currency}" is unsupported or invalid.`,
+            rawData: rawDataString,
+          });
+          continue;
+        }
       } else if (!currency) {
         anomalies.push({
           rowNumber: rowIndex,
@@ -308,25 +361,23 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
         if (!partCheck.userExists) {
           anomalies.push({
             rowNumber: rowIndex,
-            severity: 'ERROR',
+            severity: 'WARNING',
             type: 'UNKNOWN_MEMBER',
-            message: `Participant "${pName}" is not registered in the system.`,
+            message: `Participant "${pName}" is not registered in the system. Excluded from split calculation.`,
             rawData: rawDataString,
           });
-          parseFailed = true;
-          break;
+          continue;
         }
 
         if (!partCheck.isMember) {
           anomalies.push({
             rowNumber: rowIndex,
-            severity: 'ERROR',
+            severity: 'WARNING',
             type: 'INACTIVE_MEMBER',
-            message: `Participant "${partCheck.user!.name}" was not active in the group on ${dateStr}.`,
+            message: `Participant "${partCheck.user!.name}" was not active in the group on ${dateStr}. Excluded from split calculation.`,
             rawData: rawDataString,
           });
-          parseFailed = true;
-          break;
+          continue;
         }
 
         let value = cleanSplitType === 'EQUAL' ? undefined : splitDetailsMap[pName.toLowerCase()];
@@ -351,30 +402,57 @@ export async function uploadCSV(req: AuthRequest, res: Response) {
 
       if (parseFailed) continue;
 
+      if (parsedSplits.length === 0) {
+        anomalies.push({
+          rowNumber: rowIndex,
+          severity: 'ERROR',
+          type: 'SPLIT_MISMATCH',
+          message: 'No active/registered split participants found for this expense.',
+          rawData: rawDataString,
+        });
+        continue;
+      }
+
       // Mathematical split checks
       if (cleanSplitType === 'EXACT') {
         const sum = parsedSplits.reduce((acc, p) => acc + (p.value || 0), 0);
         if (Math.abs(sum - amount) > 0.02) {
           anomalies.push({
             rowNumber: rowIndex,
-            severity: 'ERROR',
+            severity: 'WARNING',
             type: 'SPLIT_MISMATCH',
-            message: `Exact split values (${sum}) must sum up to the total expense amount (${amount}).`,
+            message: `Exact split values sum (${sum}) does not match total amount (${amount}). Re-scaled proportionately.`,
             rawData: rawDataString,
           });
-          continue;
+          if (sum > 0) {
+            for (const p of parsedSplits) {
+              p.value = Number(((p.value || 0) / sum * amount).toFixed(2));
+            }
+          } else {
+            for (const p of parsedSplits) {
+              p.value = Number((amount / parsedSplits.length).toFixed(2));
+            }
+          }
         }
       } else if (cleanSplitType === 'PERCENTAGE') {
         const sum = parsedSplits.reduce((acc, p) => acc + (p.value || 0), 0);
         if (Math.abs(sum - 100) > 0.01) {
           anomalies.push({
             rowNumber: rowIndex,
-            severity: 'ERROR',
+            severity: 'WARNING',
             type: 'SPLIT_MISMATCH',
-            message: `Percentage split values (${sum}%) must sum up to 100%.`,
+            message: `Percentage split values sum (${sum}%) does not match 100%. Re-scaled to sum to 100%.`,
             rawData: rawDataString,
           });
-          continue;
+          if (sum > 0) {
+            for (const p of parsedSplits) {
+              p.value = Number(((p.value || 0) / sum * 100).toFixed(2));
+            }
+          } else {
+            for (const p of parsedSplits) {
+              p.value = Number((100 / parsedSplits.length).toFixed(2));
+            }
+          }
         }
       }
 
