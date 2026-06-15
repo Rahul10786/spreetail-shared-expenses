@@ -139,6 +139,77 @@ export const GroupDetail: React.FC = () => {
   const [approvedRowNumbers, setApprovedRowNumbers] = useState<Record<number, boolean>>({});
   const [selectedAuditUser, setSelectedAuditUser] = useState<UserBalance | null>(null);
 
+  const getMembersActiveOnDate = (dateStr: string) => {
+    if (!group) return [];
+    const date = new Date(dateStr);
+    const time = date.getTime();
+    return group.members.filter((m) => {
+      const joinTime = new Date(m.joinDate).getTime();
+      if (joinTime > time) return false;
+      if (m.leaveDate) {
+        const leaveTime = new Date(m.leaveDate).getTime();
+        if (leaveTime < time) return false;
+      }
+      if (!m.isActive && !m.leaveDate) {
+        return false;
+      }
+      return true;
+    });
+  };
+
+  const [expenseMembers, setExpenseMembers] = useState<GroupMember[]>([]);
+  const [settleMembers, setSettleMembers] = useState<GroupMember[]>([]);
+
+  useEffect(() => {
+    if (!group) return;
+    const activeOnDate = getMembersActiveOnDate(expDate);
+    setExpenseMembers(activeOnDate);
+
+    if (activeOnDate.length > 0) {
+      const isPaidByStillActive = activeOnDate.some((m) => m.userId === expPaidById);
+      if (!isPaidByStillActive) {
+        const currentIsActive = activeOnDate.find((m) => m.userId === currentUser?.id);
+        setExpPaidById(currentIsActive ? currentUser?.id || '' : activeOnDate[0]?.userId || '');
+      }
+
+      setExpParticipants((prev) => {
+        const updated: Record<string, { checked: boolean; value: string }> = {};
+        activeOnDate.forEach((m) => {
+          if (prev[m.userId]) {
+            updated[m.userId] = prev[m.userId];
+          } else {
+            updated[m.userId] = { checked: true, value: '' };
+          }
+        });
+        return updated;
+      });
+    } else {
+      setExpPaidById('');
+      setExpParticipants({});
+    }
+  }, [expDate, group]);
+
+  useEffect(() => {
+    if (!group) return;
+    const activeOnDate = getMembersActiveOnDate(settleDate);
+    setSettleMembers(activeOnDate);
+
+    if (activeOnDate.length > 0) {
+      const isFromStillActive = activeOnDate.some((m) => m.userId === settleFromId);
+      const isToStillActive = activeOnDate.some((m) => m.userId === settleToId);
+
+      if (!isFromStillActive) {
+        setSettleFromId(activeOnDate[0]?.userId || '');
+      }
+      if (!isToStillActive) {
+        setSettleToId(activeOnDate[1]?.userId || activeOnDate[0]?.userId || '');
+      }
+    } else {
+      setSettleFromId('');
+      setSettleToId('');
+    }
+  }, [settleDate, group]);
+
   const fetchGroupDetail = async () => {
     if (!groupId) return;
     try {
@@ -278,7 +349,7 @@ export const GroupDetail: React.FC = () => {
     if (expSplitType === 'EXACT') {
       const sum = participantList.reduce((acc, p) => acc + (p.value || 0), 0);
       if (Math.abs(sum - totalVal) > 0.02) {
-        setExpenseError(`Sum of splits ($${sum.toFixed(2)}) must match total expense ($${totalVal.toFixed(2)})`);
+        setExpenseError(`Sum of splits (₹${sum.toFixed(2)}) must match total expense (₹${totalVal.toFixed(2)})`);
         return;
       }
     } else if (expSplitType === 'PERCENTAGE') {
@@ -514,13 +585,15 @@ export const GroupDetail: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                setSettleFromId(activeMembers[0]?.userId || '');
-                setSettleToId(activeMembers[1]?.userId || '');
+                const members = getMembersActiveOnDate(new Date().toISOString().substring(0, 10));
+                setSettleFromId(members[0]?.userId || '');
+                setSettleToId(members[1]?.userId || members[0]?.userId || '');
                 setSettleAmount('');
+                setSettleDate(new Date().toISOString().substring(0, 10));
                 setSettleError(null);
                 setShowSettleModal(true);
               }}
-              className="py-2.5 px-4 bg-emerald-55 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
+              className="py-2.5 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-sm font-semibold transition-colors"
             >
               Settle Up
             </button>
@@ -811,7 +884,7 @@ export const GroupDetail: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -843,7 +916,7 @@ export const GroupDetail: React.FC = () => {
                     onChange={(e) => setExpPaidById(e.target.value)}
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
                   >
-                    {activeMembers.map((m) => (
+                    {expenseMembers.map((m) => (
                       <option key={m.userId} value={m.userId}>{m.user.name}</option>
                     ))}
                   </select>
@@ -874,7 +947,7 @@ export const GroupDetail: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Split Participants</label>
                 <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 max-h-52 overflow-y-auto">
-                  {activeMembers.map((m) => {
+                  {expenseMembers.map((m) => {
                     const part = expParticipants[m.userId] || { checked: false, value: '' };
                     return (
                       <div key={m.userId} className="flex justify-between items-center text-sm">
@@ -890,7 +963,7 @@ export const GroupDetail: React.FC = () => {
 
                         {part.checked && expSplitType !== 'EQUAL' && (
                           <div className="flex items-center space-x-1.5">
-                            <span className="text-slate-400 text-xs">{expSplitType === 'PERCENTAGE' ? '%' : '$'}</span>
+                            <span className="text-slate-400 text-xs">{expSplitType === 'PERCENTAGE' ? '%' : '₹'}</span>
                             <input
                               type="number"
                               step="0.01"
@@ -952,7 +1025,7 @@ export const GroupDetail: React.FC = () => {
                   onChange={(e) => setSettleFromId(e.target.value)}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
                 >
-                  {activeMembers.map((m) => (
+                  {settleMembers.map((m) => (
                     <option key={m.userId} value={m.userId}>{m.user.name}</option>
                   ))}
                 </select>
@@ -965,7 +1038,7 @@ export const GroupDetail: React.FC = () => {
                   onChange={(e) => setSettleToId(e.target.value)}
                   className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
                 >
-                  {activeMembers.map((m) => (
+                  {settleMembers.map((m) => (
                     <option key={m.userId} value={m.userId}>{m.user.name}</option>
                   ))}
                 </select>
@@ -973,7 +1046,7 @@ export const GroupDetail: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1064,12 +1137,14 @@ export const GroupDetail: React.FC = () => {
                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-800 leading-relaxed">
                   <p className="font-bold mb-1">CSV Template Format:</p>
                   <code className="block bg-blue-100/50 p-2 rounded text-[11px] overflow-x-auto text-blue-900 font-mono">
-                    description,amount,date,paidBy,splitType,participants
+                    date,description,paid_by,amount,currency,split_type,split_with,split_details
                   </code>
                   <ul className="list-disc list-inside mt-2 space-y-1 text-blue-700">
-                    <li><strong>paidBy</strong>: Email of register user (e.g. alice@example.com)</li>
-                    <li><strong>splitType</strong>: EQUAL, EXACT, or PERCENTAGE</li>
-                    <li><strong>participants</strong>: email1;email2 (for EQUAL) or email1:val;email2:val (EXACT/PERCENTAGE)</li>
+                    <li><strong>paid_by</strong>: Registered name of the payer (e.g. Aisha, Priya)</li>
+                    <li><strong>split_type</strong>: equal, unequal, percentage, or share</li>
+                    <li><strong>split_with</strong>: Semicolon-separated participant names (e.g. Aisha;Rohan;Priya)</li>
+                    <li><strong>split_details</strong>: Required for unequal, percentage, share. Matches name to value (e.g. Rohan 700; Priya 400 or Rohan 30%; Priya 30% or Rohan 1; Priya 2)</li>
+                    <li><strong>currency</strong> (optional): Defaults to INR. Supports USD for automatic exchange rates.</li>
                   </ul>
                 </div>
 
@@ -1176,8 +1251,17 @@ export const GroupDetail: React.FC = () => {
                           />
                           <div>
                             <span className="font-bold text-slate-800">Row {exp.rowNumber}: {exp.description}</span>
-                            <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name}</span>
-                            <div className="text-slate-400 mt-1">Split Type: {exp.splitType} • With: {exp.splits.map((s: any) => s.name).join(', ')}</div>
+                            {exp.isSettlement ? (
+                              <>
+                                <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name} to {group?.members.find(m => m.userId === exp.recipientId)?.user.name}</span>
+                                <div className="text-slate-400 mt-1 font-semibold text-emerald-600">Reclassified as Group Settlement</div>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-slate-500 font-medium"> • ₹{exp.amount.toFixed(2)} • Paid by {group?.members.find(m => m.userId === exp.paidById)?.user.name}</span>
+                                <div className="text-slate-400 mt-1">Split Type: {exp.splitType} • With: {exp.splits?.map((s: any) => s.name).join(', ') || ''}</div>
+                              </>
+                            )}
                           </div>
                         </label>
                       ))}

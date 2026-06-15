@@ -4,8 +4,11 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-primary-100;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-slate-950 text-slate-100 antialiased selection:bg-primary-500/30;
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', -apple-system, sans-serif;
   }
 }
 
