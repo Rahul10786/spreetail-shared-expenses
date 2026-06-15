@@ -1034,49 +1034,49 @@ export const GroupDetail: React.FC = () => {
 
       {/* Settle Up (Settlement) Modal */}
       {showSettleModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 rounded-3xl border border-white/10 max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150 shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800">Record Settlement</h3>
-              <button onClick={() => setShowSettleModal(false)} className="text-slate-400 hover:text-slate-600 text-lg p-1">✕</button>
+              <h3 className="text-xl font-bold text-white">Record Settlement</h3>
+              <button onClick={() => setShowSettleModal(false)} className="text-slate-400 hover:text-white text-lg p-1 transition-colors">✕</button>
             </div>
 
             {settleError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-sm mb-4 text-center">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm mb-4 text-center font-medium">
                 {settleError}
               </div>
             )}
 
             <form onSubmit={handleRecordSettlement} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Pay From (Debtor)</label>
+                <label className="block text-sm font-semibold text-slate-350 mb-1.5">Pay From (Debtor)</label>
                 <select
                   value={settleFromId}
                   onChange={(e) => setSettleFromId(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-900 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 >
                   {settleMembers.map((m) => (
-                    <option key={m.userId} value={m.userId}>{m.user.name}</option>
+                    <option key={m.userId} value={m.userId} className="bg-slate-900 text-white">{m.user.name}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Pay To (Creditor)</label>
+                <label className="block text-sm font-semibold text-slate-350 mb-1.5">Pay To (Creditor)</label>
                 <select
                   value={settleToId}
                   onChange={(e) => setSettleToId(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-900 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 >
                   {settleMembers.map((m) => (
-                    <option key={m.userId} value={m.userId}>{m.user.name}</option>
+                    <option key={m.userId} value={m.userId} className="bg-slate-900 text-white">{m.user.name}</option>
                   ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (₹)</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Amount (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1084,34 +1084,34 @@ export const GroupDetail: React.FC = () => {
                     value={settleAmount}
                     onChange={(e) => setSettleAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 text-sm placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <label className="block text-sm font-semibold text-slate-350 mb-1.5">Date</label>
                   <input
                     type="date"
                     required
                     value={settleDate}
                     onChange={(e) => setSettleDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white text-sm"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-slate-800/50 text-sm color-scheme-dark"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-white/5">
                 <button
                   type="button"
                   onClick={() => setShowSettleModal(false)}
-                  className="py-2.5 px-4 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="py-2.5 px-4 bg-white/5 border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={settleLoading}
-                  className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-200 flex items-center space-x-2"
+                  className="py-2.5 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-550 hover:to-teal-550 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 flex items-center space-x-2"
                 >
                   {settleLoading ? 'Recording...' : 'Record Payment'}
                 </button>
