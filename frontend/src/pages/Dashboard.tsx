@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
 import { api } from '../services/api';
 
 interface Group {
@@ -13,6 +14,7 @@ interface Group {
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export const Dashboard: React.FC = () => {
       setNewGroupName('');
       setNewGroupDesc('');
       setShowModal(false);
+      toast('Group created successfully!', 'success');
       await fetchGroups();
     } catch (err: any) {
       setCreateError(err.message || 'Failed to create group.');

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +25,7 @@ export const Login: React.FC = () => {
 
     try {
       await login(email, password);
+      toast('Logged in successfully!', 'success');
       navigate('/'); // Redirect to Dashboard on success
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');

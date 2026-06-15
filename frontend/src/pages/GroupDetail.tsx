@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
 
 interface User {
   id: string;
@@ -93,6 +94,7 @@ interface ImportScanResult {
 export const GroupDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const { user: currentUser } = useAuth();
+  const { toast } = useToast();
 
   const [group, setGroup] = useState<GroupDetailData | null>(null);
   const [balances, setBalances] = useState<UserBalance[]>([]);
@@ -191,6 +193,7 @@ export const GroupDetail: React.FC = () => {
       });
       setMemberEmail('');
       setShowMemberModal(false);
+      toast('Member added successfully!', 'success');
       await fetchGroupDetail();
     } catch (err: any) {
       setMemberError(err.message || 'Failed to add member.');
@@ -206,9 +209,10 @@ export const GroupDetail: React.FC = () => {
       await api.post(`/groups/${groupId}/members/${memberUserId}/leave`, {
         leaveDate: new Date().toISOString(),
       });
+      toast('Member removed from active list.', 'info');
       await fetchGroupDetail();
     } catch (err: any) {
-      alert(err.message || 'Failed to remove member.');
+      toast(err.message || 'Failed to remove member.', 'error');
     }
   };
 
@@ -217,9 +221,10 @@ export const GroupDetail: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this expense?')) return;
     try {
       await api.delete(`/groups/${groupId}/expenses/${expenseId}`);
+      toast('Expense deleted successfully.', 'info');
       await fetchGroupDetail();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete expense.');
+      toast(err.message || 'Failed to delete expense.', 'error');
     }
   };
 
@@ -298,6 +303,7 @@ export const GroupDetail: React.FC = () => {
       setExpDescription('');
       setExpAmount('');
       setShowExpenseModal(false);
+      toast('Expense recorded successfully!', 'success');
       await fetchGroupDetail();
     } catch (err: any) {
       setExpenseError(err.message || 'Failed to record expense.');
@@ -348,6 +354,7 @@ export const GroupDetail: React.FC = () => {
 
       setShowSettleModal(false);
       setSettleAmount('');
+      toast('Settlement recorded successfully!', 'success');
       await fetchGroupDetail();
     } catch (err: any) {
       setSettleError(err.message || 'Failed to record settlement.');
@@ -379,7 +386,6 @@ export const GroupDetail: React.FC = () => {
     setImportError(null);
 
     try {
-      // Custom call to API because of FormData multipart file upload
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/groups/${groupId}/imports`, {
         method: 'POST',
@@ -395,6 +401,11 @@ export const GroupDetail: React.FC = () => {
       }
 
       setImportScanResult(data);
+      if (data.status === 'FAILED') {
+        toast('CSV scan detected critical errors.', 'error');
+      } else {
+        toast('CSV scan complete with warnings.', 'info');
+      }
     } catch (err: any) {
       setImportError(err.message || 'Error occurred while scanning CSV.');
     } finally {
@@ -413,6 +424,12 @@ export const GroupDetail: React.FC = () => {
       await api.post(`/groups/${groupId}/imports/${importScanResult.jobId}/confirm`, {
         action,
       });
+
+      if (action === 'APPROVE') {
+        toast('CSV imported successfully!', 'success');
+      } else {
+        toast('Import job rejected.', 'info');
+      }
 
       setShowImportModal(false);
       setSelectedFile(null);
@@ -551,7 +568,7 @@ export const GroupDetail: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {suggestedSettlements.map((s, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
+                    <div key={idx} className="p-3 bg-slate-55 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
                       <div>
                         <span className="font-semibold text-slate-700">{s.fromName}</span>
                         <span className="text-slate-400 mx-1">owes</span>
@@ -1003,7 +1020,6 @@ export const GroupDetail: React.FC = () => {
             )}
 
             {!importScanResult ? (
-              /* Phase 1: Upload Form */
               <form onSubmit={handleCSVUpload} className="space-y-6">
                 <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50 hover:bg-slate-100/50 transition-colors cursor-pointer relative">
                   <input
@@ -1052,7 +1068,6 @@ export const GroupDetail: React.FC = () => {
                 </div>
               </form>
             ) : (
-              /* Phase 2: Scan report and confirmation */
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50 border-slate-150 text-sm">
                   <div>
@@ -1071,7 +1086,6 @@ export const GroupDetail: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Warning / Error message headers */}
                 {importScanResult.status === 'FAILED' ? (
                   <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-medium">
                     ❌ Scan failed. The file contains critical errors that must be fixed before importing.
@@ -1086,7 +1100,6 @@ export const GroupDetail: React.FC = () => {
                   </div>
                 )}
 
-                {/* Anomalies List */}
                 {importScanResult.anomalies.length > 0 && (
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm mb-2">Detected Anomalies</h4>

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../context/ToastContext';
 
 export const Register: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,6 +37,7 @@ export const Register: React.FC = () => {
 
     try {
       await register(name, email, password);
+      toast('Account created successfully! Welcome to FairShare.', 'success');
       navigate('/'); // Redirect to Dashboard on success
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
